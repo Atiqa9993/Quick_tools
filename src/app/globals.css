@@ -1,0 +1,328 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════
+   QuickTools — Design Tokens (Stitch / MD3)
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ── Surfaces ── */
+  --surface: #f8f9ff;
+  --surface-dim: #d0dbed;
+  --surface-bright: #f8f9ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e6eeff;
+  --surface-container-high: #dee9fc;
+  --surface-container-highest: #d9e3f6;
+  --surface-variant: #d9e3f6;
+
+  /* ── On Surfaces ── */
+  --on-surface: #121c2a;
+  --on-surface-variant: #424656;
+  --inverse-surface: #27313f;
+  --inverse-on-surface: #eaf1ff;
+
+  /* ── Primary ── */
+  --primary: #0050cb;
+  --on-primary: #ffffff;
+  --primary-container: #0066ff;
+  --on-primary-container: #f8f7ff;
+  --inverse-primary: #b3c5ff;
+  --primary-fixed: #dae1ff;
+  --primary-fixed-dim: #b3c5ff;
+  --on-primary-fixed: #001849;
+  --on-primary-fixed-variant: #003fa4;
+
+  /* ── Secondary ── */
+  --secondary: #4648d4;
+  --on-secondary: #ffffff;
+  --secondary-container: #6063ee;
+  --on-secondary-container: #fffbff;
+  --secondary-fixed: #e1e0ff;
+  --secondary-fixed-dim: #c0c1ff;
+  --on-secondary-fixed: #07006c;
+  --on-secondary-fixed-variant: #2f2ebe;
+
+  /* ── Tertiary ── */
+  --tertiary: #a33200;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #cc4204;
+  --on-tertiary-container: #fff6f4;
+  --tertiary-fixed: #ffdbd0;
+  --tertiary-fixed-dim: #ffb59d;
+  --on-tertiary-fixed: #390c00;
+  --on-tertiary-fixed-variant: #832600;
+
+  /* ── Error ── */
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /* ── Outlines ── */
+  --outline: #727687;
+  --outline-variant: #c2c6d8;
+
+  /* ── Surface tint ── */
+  --surface-tint: #0054d6;
+
+  /* ── Background ── */
+  --background: #f8f9ff;
+  --on-background: #121c2a;
+
+  /* ── Spacing ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --container-max: 1280px;
+  --gutter: 24px;
+
+  /* ── Radii ── */
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+}
+
+/* ── Dark mode ── */
+.dark {
+  --surface: #111827;
+  --surface-dim: #0f1521;
+  --surface-bright: #1f2937;
+  --surface-container-lowest: #0d1117;
+  --surface-container-low: #151d2b;
+  --surface-container: #1a2332;
+  --surface-container-high: #1f2b3d;
+  --surface-container-highest: #253347;
+  --surface-variant: #374151;
+  --on-surface: #e8edf5;
+  --on-surface-variant: #9ca3b8;
+  --inverse-surface: #eaf1ff;
+  --inverse-on-surface: #121c2a;
+  --outline: #8b90a0;
+  --outline-variant: #3a4050;
+  --background: #111827;
+  --on-background: #e8edf5;
+  --primary-container: #1d4ed8;
+}
+
+/* ═══════════════════════════════════════════════
+   Tailwind v4 Theme Extensions
+   ═══════════════════════════════════════════════ */
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-variant: var(--surface-variant);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-background: var(--background);
+  --color-on-background: var(--on-background);
+  --color-surface-tint: var(--surface-tint);
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ═══════════════════════════════════════════════
+   Base Styles
+   ═══════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--on-background);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Selection ── */
+::selection {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--outline); }
+
+/* ── Focus ── */
+*:focus-visible {
+  outline: 2px solid var(--primary-container);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════
+   Layout Utilities
+   ═══════════════════════════════════════════════ */
+
+.container-max {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* ═══════════════════════════════════════════════
+   Typography Scale
+   ═══════════════════════════════════════════════ */
+
+.text-headline-lg {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-headline-md {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-headline-sm {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.text-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.text-body-sm {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.text-label-md {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════
+   Component Styles
+   ═══════════════════════════════════════════════ */
+
+/* Tool Card */
+.tool-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tool-card:hover {
+  border-color: var(--primary-container);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Search container glow */
+.search-glow:focus-within {
+  box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+}
+
+/* Button press */
+.btn-press {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* ═══════════════════════════════════════════════
+   Animations (with reduced-motion)
+   ═══════════════════════════════════════════════ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .tool-card:hover {
+    transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Navigation / Mega Menu
+   ═══════════════════════════════════════════════ */
+
+.nav-item:hover .mega-menu {
+    display: grid;
+    opacity: 1;
+    transform: translateY(0);
+}
+.mega-menu {
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+}
