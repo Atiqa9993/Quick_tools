@@ -36,11 +36,24 @@ yarn-error.log*
 # vercel
 .vercel
 
+# python & backend
+backend/venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.pdf
+
+# temp & agent workspace
+.gemini/
+.tempmediaStorage/
+scratch/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-
-# python virtual env
-venv/
-backend/venv/

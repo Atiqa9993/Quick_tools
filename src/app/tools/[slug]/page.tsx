@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import ToolClient from './ToolClient'
 import { allToolsConfig } from '@/lib/toolData'
 
+export const dynamicParams = true
+export const dynamic = 'force-dynamic'
+
 export async function generateStaticParams() {
   return Object.keys(allToolsConfig).map((slug) => ({ slug }))
 }

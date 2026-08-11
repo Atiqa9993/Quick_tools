@@ -31,6 +31,7 @@ if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
 import fitz  # PyMuPDF
+import pikepdf
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -90,6 +91,183 @@ from typing import Optional
 # Configuration for PDF Uploads
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB limit
 
+
+def sanitize_pdf_bytes(pdf_bytes: bytes) -> bytes:
+    """
+    Sanitizes PDF bytes using pikepdf to remove linearization ("fast web view")
+    structures that cause PyMuPDF (fitz) to throw 'code=4: Linearisation is no longer supported'.
+    Returns sanitized PDF bytes. Raises HTTPException(400) if pikepdf cannot parse the file.
+    """
+    try:
+        pdf_stream = io.BytesIO(pdf_bytes)
+        with pikepdf.Pdf.open(pdf_stream) as pdf:
+            out_buf = io.BytesIO()
+            pdf.save(out_buf, linearize=False)
+            return out_buf.getvalue()
+    except (pikepdf.PdfError, pikepdf.DataDecodingError) as e:
+        print(f"[pikepdf] Error opening/saving PDF: {e}")
+        raise HTTPException(status_code=400, detail="Invalid or corrupted PDF file")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[pikepdf] Sanitization error: {e}")
+        raise HTTPException(status_code=400, detail="Invalid or corrupted PDF file")
+
+
+def safe_fitz_open(pdf_bytes: bytes) -> fitz.Document:
+    """
+    Safely opens a PDF document with PyMuPDF (fitz) after passing it through sanitize_pdf_bytes().
+    Catches linearization errors and provides a fallback retry mechanism.
+    """
+    sanitized = pdf_bytes
+    try:
+        sanitized = sanitize_pdf_bytes(pdf_bytes)
+    except Exception:
+        pass
+
+    try:
+        return fitz.open(stream=sanitized, filetype="pdf")
+    except Exception as e:
+        # Fallback retry with sanitize_pdf_bytes explicitly
+        try:
+            retry_bytes = sanitize_pdf_bytes(pdf_bytes)
+            return fitz.open(stream=retry_bytes, filetype="pdf")
+        except Exception as err:
+            print(f"[fitz] Failed to open PDF: {err}")
+            raise HTTPException(status_code=400, detail="Invalid or corrupted PDF file")
+
+def _has_text_content(doc: fitz.Document) -> bool:
+    """
+    Checks if a PDF document contains real extractable text.
+    Returns True if text content is found, False if it's purely scanned/image-only.
+    """
+    total_chars = 0
+    for page in doc:
+        text = page.get_text()
+        total_chars += len(text.strip())
+        if total_chars > 20:  # Threshold for non-trivial text
+            return True
+    return total_chars > 0
+
+
+def _recompress_images_in_pdf(pdf_bytes: bytes, jpeg_quality: int, max_dim: int = 0) -> bytes:
+    """
+    Strategy: In-place image recompression.
+    Opens a PDF, finds every embedded image, recompresses it as a smaller
+    JPEG (or optimized PNG for diagram-like images), optionally downscales,
+    and replaces it inside the document. Text/vector content is preserved
+    untouched, so the file stays selectable/searchable.
+    """
+    from PIL import Image as PILImage
+
+    doc = safe_fitz_open(pdf_bytes)
+    processed_xrefs = set()
+    replaced = 0
+    skipped = 0
+
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        image_list = page.get_images(full=True)
+
+        for img_info in image_list:
+            xref = img_info[0]
+            if xref in processed_xrefs:
+                continue
+            processed_xrefs.add(xref)
+
+            try:
+                base_image = doc.extract_image(xref)
+            except Exception:
+                continue
+
+            if not base_image or not base_image.get("image"):
+                continue
+
+            img_bytes_orig = base_image.get("image")
+            orig_ext = base_image.get("ext", "unknown")
+            orig_sz = len(img_bytes_orig)
+
+            try:
+                pil_img = PILImage.open(io.BytesIO(img_bytes_orig))
+            except Exception:
+                continue
+
+            orig_w, orig_h = pil_img.size
+
+            # Convert palette / RGBA images so JPEG save works
+            pil_rgb = pil_img
+            if pil_rgb.mode in ("P", "PA"):
+                pil_rgb = pil_rgb.convert("RGBA")
+            if pil_rgb.mode == "RGBA":
+                bg = PILImage.new("RGB", pil_rgb.size, (255, 255, 255))
+                bg.paste(pil_rgb, mask=pil_rgb.split()[3])
+                pil_rgb = bg
+            elif pil_rgb.mode != "RGB":
+                pil_rgb = pil_rgb.convert("RGB")
+
+            # Downscale if image exceeds max_dim
+            was_scaled = False
+            if max_dim > 0:
+                w, h = pil_rgb.size
+                if max(w, h) > max_dim:
+                    ratio = max_dim / float(max(w, h))
+                    new_w, new_h = max(1, int(w * ratio)), max(1, int(h * ratio))
+                    pil_rgb = pil_rgb.resize((new_w, new_h), PILImage.LANCZOS)
+                    was_scaled = True
+
+            # Candidate 1: JPEG recompression
+            jpeg_buf = io.BytesIO()
+            pil_rgb.save(jpeg_buf, format="JPEG", quality=jpeg_quality, optimize=True)
+            jpeg_bytes = jpeg_buf.getvalue()
+            jpeg_sz = len(jpeg_bytes)
+
+            # Candidate 2: Optimized PNG recompression (good for diagrams/charts)
+            png_buf = io.BytesIO()
+            pil_rgb.save(png_buf, format="PNG", optimize=True)
+            png_bytes = png_buf.getvalue()
+            png_sz = len(png_bytes)
+
+            # Pick the best candidate that is smaller than original
+            best_bytes = None
+            best_sz = orig_sz
+            best_fmt = "none"
+
+            if jpeg_sz < best_sz:
+                best_bytes = jpeg_bytes
+                best_sz = jpeg_sz
+                best_fmt = f"JPEG(q={jpeg_quality})"
+
+            if png_sz < best_sz:
+                best_bytes = png_bytes
+                best_sz = png_sz
+                best_fmt = "PNG(optimized)"
+
+            scaled_info = f" scaled {orig_w}x{orig_h}->{pil_rgb.size[0]}x{pil_rgb.size[1]}" if was_scaled else ""
+            if best_bytes is not None:
+                try:
+                    page.replace_image(xref, stream=best_bytes)
+                    replaced += 1
+                    print(f"    [IMG xref={xref}] {orig_ext} {orig_w}x{orig_h}{scaled_info}: {orig_sz} -> {best_sz} ({best_fmt})")
+                except Exception:
+                    try:
+                        new_pix = fitz.Pixmap(best_bytes)
+                        page.replace_image(xref, pixmap=new_pix)
+                        replaced += 1
+                        print(f"    [IMG xref={xref}] {orig_ext} {orig_w}x{orig_h}{scaled_info}: {orig_sz} -> {best_sz} ({best_fmt}, pixmap fallback)")
+                    except Exception as e:
+                        skipped += 1
+                        print(f"    [IMG xref={xref}] {orig_ext} {orig_w}x{orig_h}: REPLACE FAILED - {e}")
+            else:
+                skipped += 1
+                print(f"    [IMG xref={xref}] {orig_ext} {orig_w}x{orig_h}{scaled_info}: SKIPPED (JPEG={jpeg_sz}, PNG={png_sz}, orig={orig_sz} — all bigger)")
+
+    buf = io.BytesIO()
+    doc.save(buf, garbage=4, deflate=True, clean=True, use_objstms=1)
+    doc.close()
+    print(f"  -> In-place recompressed {replaced} images, skipped {skipped} (q={jpeg_quality}, max_dim={max_dim})")
+    return buf.getvalue()
+
+
 @app.post("/api/tools/compress-pdf")
 async def compress_pdf(
     file: UploadFile = File(...), 
@@ -98,15 +276,17 @@ async def compress_pdf(
 ):
     """
     Endpoint: PDF Compressor
-    Description: Reduces PDF file size using lossy/lossless compression or binary search to hit a target KB.
+    Description: Reduces PDF file size:
+      - For text-based PDFs: Recompresses embedded images without rasterization so text remains selectable.
+      - For scanned PDFs: Uses page rasterization as fallback.
     Returns: A compressed application/pdf file.
     """
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
     try:
-        pdf_bytes = await file.read()
-        original_size = len(pdf_bytes)
+        raw_bytes = await file.read()
+        original_size = len(raw_bytes)
 
         if original_size > MAX_FILE_SIZE:
             raise HTTPException(status_code=413, detail="File too large. Maximum size is 50MB.")
@@ -114,101 +294,286 @@ async def compress_pdf(
         if original_size == 0:
             raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        pdf_bytes = sanitize_pdf_bytes(raw_bytes)
+        doc = safe_fitz_open(pdf_bytes)
 
         if doc.page_count == 0:
             doc.close()
             raise HTTPException(status_code=400, detail="The PDF has no pages.")
 
-        best_buffer = None
-        best_size = float('inf')
-        method = ""
+        # Detect PDF characteristics: total embedded images and text presence
+        total_images = sum(len(page.get_images(full=True)) for page in doc)
+        has_text = _has_text_content(doc)
 
-        # ── Target Size Mode (Binary Search) ──
-        if target_size_kb and target_size_kb > 0:
-            target_bytes = target_size_kb * 1024
-            low_q, high_q = 10, 80
-            last_valid_buffer = None
-            last_valid_size = float('inf')
+        # ── PATH 1: Text-Only PDFs (no embedded images) ──
+        if total_images == 0:
+            print(f"[DEBUG COMPRESS] Starting Text-Only Compression for '{file.filename}' (Initial: {original_size} bytes)")
             
-            # Max 4 iterations to keep it fast
-            for _ in range(4):
-                mid_q = (low_q + high_q) // 2
-                
-                temp_doc = fitz.open()
+            # Step 1: Clean page content streams
+            for page in doc:
+                try:
+                    page.clean_contents()
+                except Exception:
+                    pass
+
+            buf_clean = io.BytesIO()
+            doc.save(buf_clean, garbage=4, deflate=True, clean=True, deflate_fonts=True, use_objstms=1)
+            sz_clean = len(buf_clean.getvalue())
+            print(f"[DEBUG COMPRESS] Step 1 (page.clean_contents + garbage=4): {original_size} -> {sz_clean} bytes")
+
+            # Step 2: Apply font subsetting if supported by PyMuPDF
+            if hasattr(doc, "subset_fonts"):
+                try:
+                    doc.subset_fonts()
+                    print("[DEBUG COMPRESS] Step 2 (doc.subset_fonts()): Executed successfully")
+                except Exception as e:
+                    print(f"[DEBUG COMPRESS] Step 2 (doc.subset_fonts()): Notice/Failed - {e}")
+
+            # Step 3: Save structural buffer with use_objstms=1, deflate=True, clean=True, garbage=4
+            struct_buf = io.BytesIO()
+            doc.save(struct_buf, garbage=4, deflate=True, clean=True, deflate_fonts=True, use_objstms=1)
+            struct_bytes = struct_buf.getvalue()
+            sz_struct = len(struct_bytes)
+            print(f"[DEBUG COMPRESS] Step 3 (PyMuPDF save with use_objstms=1, deflate=True, clean=True, garbage=4): {sz_clean} -> {sz_struct} bytes")
+
+            # Step 4: Recompress loose PDF objects via pikepdf object streams
+            try:
+                p_pdf = pikepdf.Pdf.open(io.BytesIO(struct_bytes))
+                p_buf = io.BytesIO()
+                p_pdf.save(p_buf, compress_streams=True, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+                p_pdf.close()
+                pike_bytes = p_buf.getvalue()
+                sz_pike = len(pike_bytes)
+                print(f"[DEBUG COMPRESS] Step 4 (pikepdf object streams): {sz_struct} -> {sz_pike} bytes")
+                if sz_pike < sz_struct:
+                    struct_bytes = pike_bytes
+            except Exception as e:
+                print(f"[DEBUG COMPRESS] Step 4 (pikepdf object streams): Notice/Failed - {e}")
+
+            struct_size = len(struct_bytes)
+
+            # Step 5: Check if raster candidate yields smaller size (for extreme/medium or target size)
+            raster_buf = None
+            raster_size = float('inf')
+            if level in ("extreme", "medium") or target_size_kb:
+                try:
+                    r_dpi = 72 if level == "extreme" else 100
+                    r_qual = 35 if level == "extreme" else 60
+                    raster_doc = fitz.open()
+                    for page in doc:
+                        pix = page.get_pixmap(dpi=r_dpi)
+                        img_bytes = pix.tobytes("jpeg", jpg_quality=r_qual)
+                        new_page = raster_doc.new_page(width=page.rect.width, height=page.rect.height)
+                        new_page.insert_image(new_page.rect, stream=img_bytes)
+
+                    r_buf = io.BytesIO()
+                    raster_doc.save(r_buf, garbage=4, deflate=True, clean=True, use_objstms=1)
+                    raster_doc.close()
+                    r_bytes = r_buf.getvalue()
+                    
+                    try:
+                        rp_pdf = pikepdf.Pdf.open(io.BytesIO(r_bytes))
+                        rp_buf = io.BytesIO()
+                        rp_pdf.save(rp_buf, compress_streams=True, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+                        rp_pdf.close()
+                        if len(rp_buf.getvalue()) < len(r_bytes):
+                            r_bytes = rp_buf.getvalue()
+                    except Exception:
+                        pass
+
+                    raster_size = len(r_bytes)
+                    raster_buf = io.BytesIO(r_bytes)
+                    print(f"[DEBUG COMPRESS] Step 5 (Raster candidate {level}): {original_size} -> {raster_size} bytes")
+                except Exception as e:
+                    print(f"[DEBUG COMPRESS] Step 5 (Raster candidate): Error - {e}")
+
+            doc.close()
+
+            # Select best candidate
+            if raster_buf and raster_size < struct_size and raster_size < original_size:
+                best_buffer = raster_buf
+                best_size = raster_size
+                method = f"text-only (rasterized {level})"
+            elif struct_size < original_size:
+                best_buffer = io.BytesIO(struct_bytes)
+                best_size = struct_size
+                method = "text-only (structural, content stream & font compression)"
+            else:
+                best_buffer = io.BytesIO(pdf_bytes)
+                best_size = original_size
+                method = "text-only (already optimal)"
+
+            best_buffer.seek(0)
+            reduction_pct = round(((original_size - best_size) / original_size) * 100, 1)
+            print(f"✓ Compressed [{method}]: {original_size} -> {best_size} bytes ({reduction_pct}% reduction)")
+
+            headers = {
+                "Content-Disposition": f'attachment; filename="compressed-{file.filename}"',
+            }
+
+            return Response(
+                content=best_buffer.getvalue(),
+                media_type="application/pdf",
+                headers=headers
+            )
+
+        # ── PATH 2 & 3: Image-based PDFs (Text+Images or Scanned/Image-Only) ──
+        print(f"  Compressing PDF '{file.filename}' ({original_size} bytes). Embedded images: {total_images}, Text-based: {has_text}")
+
+                # ── Quality presets ──
+        # Log the received compression level for debugging
+        print(f"[DEBUG COMPRESS] Received compression level: '{level}'")
+        if level == "low":
+            img_quality = 80
+            raster_dpi = 150
+            raster_quality = 80
+            max_dim = 1200  # low: max 1200px width/height
+        elif level == "extreme":
+            img_quality = 35
+            raster_dpi = 72
+            raster_quality = 35
+            max_dim = 600   # extreme: max 600px
+        else:  # medium (default)
+            img_quality = 60
+            raster_dpi = 100
+            raster_quality = 60
+            max_dim = 900   # medium: max 900px
+
+        candidates = []
+
+        # ── Strategy 1: Lossless cleanup & font subsetting ──
+        if hasattr(doc, "subset_fonts"):
+            try:
+                doc.subset_fonts()
+            except Exception:
+                pass
+
+        for page in doc:
+            try:
+                page.clean_contents()
+            except Exception:
+                pass
+
+        lossless_buf = io.BytesIO()
+        doc.save(lossless_buf, garbage=4, deflate=True, clean=True, deflate_fonts=True, use_objstms=1)
+        lossless_bytes = lossless_buf.getvalue()
+        try:
+            p_pdf = pikepdf.Pdf.open(io.BytesIO(lossless_bytes))
+            p_buf = io.BytesIO()
+            p_pdf.save(p_buf, compress_streams=True, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+            p_pdf.close()
+            if len(p_buf.getvalue()) < len(lossless_bytes):
+                lossless_bytes = p_buf.getvalue()
+        except Exception:
+            pass
+
+        lossless_size = len(lossless_bytes)
+        candidates.append((io.BytesIO(lossless_bytes), lossless_size, "lossless"))
+        print(f"[DEBUG COMPRESS] Strategy 1 (Lossless + use_objstms=1): {original_size} -> {lossless_size} bytes")
+
+        # ── Strategy 2: In-place image recompression ──
+        recomp_size = float('inf')
+        try:
+            recomp_bytes = _recompress_images_in_pdf(pdf_bytes, img_quality, max_dim)
+            recomp_size = len(recomp_bytes)
+            candidates.append((io.BytesIO(recomp_bytes), recomp_size, "image-recompress"))
+            print(f"[DEBUG COMPRESS] Strategy 2 (Image-recompress): {original_size} -> {recomp_size} bytes")
+        except Exception as e:
+            print(f"[DEBUG COMPRESS] Strategy 2 (Image-recompress): Failed - {e}")
+
+        # ── Strategy 3: Page rasterization ──
+        # Evaluate raster candidate if has_text is False, OR if image-recompress yielded < 20% reduction
+        recomp_reduction = 0
+        if recomp_size < original_size:
+            recomp_reduction = (original_size - recomp_size) / original_size
+
+        if not has_text or recomp_reduction < 0.20 or level == "extreme" or target_size_kb:
+            try:
+                raster_doc = fitz.open()
                 for page_num in range(len(doc)):
                     page = doc.load_page(page_num)
-                    pix = page.get_pixmap(dpi=72)
-                    img_bytes = pix.tobytes("jpeg", jpg_quality=mid_q)
-                    new_page = temp_doc.new_page(width=page.rect.width, height=page.rect.height)
+                    pix = page.get_pixmap(dpi=raster_dpi)
+                    img_bytes = pix.tobytes("jpeg", jpg_quality=raster_quality)
+                    new_page = raster_doc.new_page(width=page.rect.width, height=page.rect.height)
                     new_page.insert_image(new_page.rect, stream=img_bytes)
-                
-                temp_buf = io.BytesIO()
-                temp_doc.save(temp_buf, garbage=4, deflate=True, clean=True)
-                temp_size = temp_buf.getbuffer().nbytes
-                temp_doc.close()
-                
-                if temp_size <= target_bytes:
-                    last_valid_buffer = temp_buf
-                    last_valid_size = temp_size
-                    low_q = mid_q + 1  # Try higher quality
-                else:
-                    high_q = mid_q - 1 # Need lower quality
-                    
-                best_buffer = temp_buf
-                best_size = temp_size
 
-            if last_valid_buffer:
-                best_buffer = last_valid_buffer
-                best_size = last_valid_size
-            method = f"target_size ({target_size_kb}KB)"
-            doc.close()
-            
+                raster_buf = io.BytesIO()
+                raster_doc.save(raster_buf, garbage=4, deflate=True, clean=True, deflate_fonts=True, use_objstms=1)
+                raster_bytes = raster_buf.getvalue()
+                
+                try:
+                    rp_pdf = pikepdf.Pdf.open(io.BytesIO(raster_bytes))
+                    rp_buf = io.BytesIO()
+                    rp_pdf.save(rp_buf, compress_streams=True, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+                    rp_pdf.close()
+                    if len(rp_buf.getvalue()) < len(raster_bytes):
+                        raster_bytes = rp_buf.getvalue()
+                except Exception:
+                    pass
+
+                raster_size = len(raster_bytes)
+                candidates.append((io.BytesIO(raster_bytes), raster_size, "rasterize"))
+                print(f"  Rasterize (high-yield fallback): {original_size} -> {raster_size} bytes")
+            except Exception as e:
+                print(f"  Rasterize failed: {e}")
+
+        doc.close()
+
+        # ── Target Size Mode ──
+        if target_size_kb and target_size_kb > 0:
+            target_bytes = target_size_kb * 1024
+            fitting = [(b, s, m) for b, s, m in candidates if s <= target_bytes]
+            if fitting:
+                fitting.sort(key=lambda c: c[1], reverse=True)  # largest that still fits
+                best_buffer, best_size, method = fitting[0]
+            else:
+                # Binary search using page rasterization to hit target size
+                low_q, high_q = 5, 60
+                best_buffer, best_size, method = candidates[0][0], candidates[0][1], "target-miss"
+                for _ in range(5):
+                    mid_q = (low_q + high_q) // 2
+                    temp_doc = safe_fitz_open(pdf_bytes)
+                    out_doc = fitz.open()
+                    for pn in range(len(temp_doc)):
+                        pg = temp_doc.load_page(pn)
+                        px = pg.get_pixmap(dpi=72)
+                        ib = px.tobytes("jpeg", jpg_quality=mid_q)
+                        np2 = out_doc.new_page(width=pg.rect.width, height=pg.rect.height)
+                        np2.insert_image(np2.rect, stream=ib)
+                    tb = io.BytesIO()
+                    out_doc.save(tb, garbage=4, deflate=True, clean=True, deflate_fonts=True)
+                    ts = tb.getbuffer().nbytes
+                    out_doc.close()
+                    temp_doc.close()
+                    if ts <= target_bytes:
+                        best_buffer, best_size = tb, ts
+                        method = f"target({target_size_kb}KB, rasterize)"
+                        low_q = mid_q + 1
+                    else:
+                        high_q = mid_q - 1
         else:
-            # ── Standard Mode (Lossless vs Lossy) ──
-            clean_buffer = io.BytesIO()
-            doc.save(clean_buffer, garbage=4, deflate=True, clean=True)
-            clean_size = clean_buffer.getbuffer().nbytes
-
-            dpi = 100
-            quality = 60
-            if level == "low":
-                dpi = 150
-                quality = 80
-            elif level == "extreme":
-                dpi = 72
-                quality = 40
-
-            new_doc = fitz.open()
-            for page_num in range(len(doc)):
-                page = doc.load_page(page_num)
-                pix = page.get_pixmap(dpi=dpi)
-                img_bytes = pix.tobytes("jpeg", jpg_quality=quality)
-                new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
-                new_page.insert_image(new_page.rect, stream=img_bytes)
-
-            raster_buffer = io.BytesIO()
-            new_doc.save(raster_buffer, garbage=4, deflate=True, clean=True)
-            raster_size = raster_buffer.getbuffer().nbytes
-            new_doc.close()
-            doc.close()
-
-            candidates = [
-                (clean_buffer, clean_size, "lossless"),
-                (raster_buffer, raster_size, "lossy"),
-            ]
+            # ── Standard Mode ──
             candidates.sort(key=lambda c: c[1])
-            best_buffer, best_size, method = candidates[0]
+            # If image-recompress achieved >= 20% reduction, prefer it to keep text selectable
+            image_recomp_candidates = [c for c in candidates if c[2] == "image-recompress"]
+            if image_recomp_candidates:
+                b_buf, b_sz, m_th = image_recomp_candidates[0]
+                if (original_size - b_sz) / original_size >= 0.20:
+                    best_buffer, best_size, method = b_buf, b_sz, m_th
+                else:
+                    best_buffer, best_size, method = candidates[0]
+            else:
+                best_buffer, best_size, method = candidates[0]
 
-        # Safety fallback
+        # If nothing helped, return original
         if best_size >= original_size and not target_size_kb:
             best_buffer = io.BytesIO(pdf_bytes)
             best_size = original_size
-            method = "original"
+            method = "original (already optimal)"
 
         best_buffer.seek(0)
         reduction_pct = round(((original_size - best_size) / original_size) * 100, 1)
-        print(f"Compressed [{method}]: {original_size} -> {best_size} bytes ({reduction_pct}% reduction)")
+        print(f"✓ Compressed [{method}]: {original_size} -> {best_size} bytes ({reduction_pct}% reduction)")
 
         headers = {
             "Content-Disposition": f'attachment; filename="compressed-{file.filename}"',
@@ -242,7 +607,8 @@ async def pdf_to_word(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
     try:
-        pdf_bytes = await file.read()
+        raw_bytes = await file.read()
+        pdf_bytes = sanitize_pdf_bytes(raw_bytes)
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
             temp_pdf.write(pdf_bytes)
@@ -275,6 +641,8 @@ async def pdf_to_word(file: UploadFile = File(...)):
             if os.path.exists(temp_docx_path):
                 os.remove(temp_docx_path)
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error converting PDF to Word: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -296,8 +664,9 @@ async def merge_pdf(files: list[UploadFile] = File(...)):
             if file.content_type != "application/pdf":
                 raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF.")
             
-            pdf_bytes = await file.read()
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            raw_bytes = await file.read()
+            pdf_bytes = sanitize_pdf_bytes(raw_bytes)
+            doc = safe_fitz_open(pdf_bytes)
             merged_doc.insert_pdf(doc)
             doc.close()
 
@@ -507,8 +876,9 @@ async def pdf_to_text_local(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
     try:
-        pdf_bytes = await file.read()
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        raw_bytes = await file.read()
+        pdf_bytes = sanitize_pdf_bytes(raw_bytes)
+        doc = safe_fitz_open(pdf_bytes)
 
         # Limit to 20 pages to avoid very long processing
         max_pages = min(len(doc), 20)
@@ -575,8 +945,9 @@ async def split_pdf(
     Returns: A single PDF or a ZIP file containing multiple split PDFs.
     """
     try:
-        pdf_bytes = await file.read()
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        raw_bytes = await file.read()
+        pdf_bytes = sanitize_pdf_bytes(raw_bytes)
+        doc = safe_fitz_open(pdf_bytes)
         total_pages = len(doc)
         
         output_pdfs = [] # list of (filename, bytes)
