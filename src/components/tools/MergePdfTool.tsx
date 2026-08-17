@@ -8,6 +8,7 @@ export default function MergePdfTool({ loggedIn }: { loggedIn: boolean }) {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const [progress, setProgress] = useState(0)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
 
   const maxFiles = loggedIn ? 20 : 3
 
@@ -21,6 +22,7 @@ export default function MergePdfTool({ loggedIn }: { loggedIn: boolean }) {
     setError('')
     setDone(false)
     setProgress(0)
+    setDownloadUrl(null)
 
     try {
       const progressInterval = setInterval(() => {
@@ -32,7 +34,7 @@ export default function MergePdfTool({ loggedIn }: { loggedIn: boolean }) {
         formData.append('files', file)
       })
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/merge-pdf', {
+      const response = await fetch('/api/tools/merge-pdf', {
         method: 'POST',
         body: formData,
       })
@@ -48,12 +50,18 @@ export default function MergePdfTool({ loggedIn }: { loggedIn: boolean }) {
       const blob = await response.blob()
       
       const url = URL.createObjectURL(blob)
+      
       const a = document.createElement('a')
       a.href = url
       a.download = `merged_document.pdf`
+      a.style.display = 'none'
+      document.body.appendChild(a)
       a.click()
-      URL.revokeObjectURL(url)
+      setTimeout(() => {
+        document.body.removeChild(a)
+      }, 1500)
 
+      setDownloadUrl(url)
       setDone(true)
     } catch (err) {
       console.error(err)
@@ -63,7 +71,14 @@ export default function MergePdfTool({ loggedIn }: { loggedIn: boolean }) {
     }
   }, [files])
 
-  const reset = () => { setFiles([]); setDone(false); setError(''); setProgress(0) }
+  const reset = () => { 
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl)
+    setFiles([])
+    setDone(false)
+    setError('')
+    setProgress(0)
+    setDownloadUrl(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -136,12 +151,24 @@ export default function MergePdfTool({ loggedIn }: { loggedIn: boolean }) {
             <span className="material-symbols-outlined text-primary" style={{ fontSize: 32 }}>check_circle</span>
           </div>
           <h3 className="text-headline-sm text-on-surface mb-2">Merge Complete!</h3>
-          <p className="text-body-md text-on-surface-variant mb-6">Your combined PDF has been downloaded.</p>
+          <p className="text-body-md text-on-surface-variant mb-6">Your combined PDF is ready.</p>
           
-          <button onClick={reset} className="inline-flex items-center gap-2 border border-outline text-on-surface font-bold px-6 py-3 rounded-xl hover:bg-surface-variant transition-colors text-sm">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span>
-            Merge more files
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {downloadUrl && (
+              <a 
+                href={downloadUrl} 
+                download="merged_document.pdf"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-6 py-3 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors text-sm"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>
+                Download Merged PDF
+              </a>
+            )}
+            <button onClick={reset} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-outline text-on-surface font-bold px-6 py-3 rounded-xl hover:bg-surface-variant transition-colors text-sm">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span>
+              Merge more files
+            </button>
+          </div>
         </div>
       )}
     </div>

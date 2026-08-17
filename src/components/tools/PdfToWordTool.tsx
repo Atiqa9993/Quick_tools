@@ -8,6 +8,8 @@ export default function PdfToWordTool({ loggedIn }: { loggedIn: boolean }) {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const [progress, setProgress] = useState(0)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [downloadName, setDownloadName] = useState<string>('document.docx')
 
   const convertToWord = useCallback(async () => {
     if (files.length === 0) return
@@ -16,6 +18,7 @@ export default function PdfToWordTool({ loggedIn }: { loggedIn: boolean }) {
     setError('')
     setDone(false)
     setProgress(0)
+    setDownloadUrl(null)
 
     try {
       const file = files[0]
@@ -27,7 +30,7 @@ export default function PdfToWordTool({ loggedIn }: { loggedIn: boolean }) {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/pdf-to-word', {
+      const response = await fetch('/api/tools/pdf-to-word', {
         method: 'POST',
         body: formData,
       })
@@ -40,17 +43,30 @@ export default function PdfToWordTool({ loggedIn }: { loggedIn: boolean }) {
         throw new Error(errData.detail || 'Failed to convert PDF on the server.')
       }
 
-      const blob = await response.blob()
+      const arrayBuffer = await response.arrayBuffer()
+      const docxBlob = new Blob([arrayBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      })
       
-      const url = URL.createObjectURL(blob)
+      const baseName = file.name.replace(/\.[^/.]+$/, '')
+      const fileName = baseName + '.docx'
+
+      const url = URL.createObjectURL(docxBlob)
+
+      // Try auto-download as fallback
       const a = document.createElement('a')
       a.href = url
-      // Change extension to .docx
-      const originalName = file.name.replace(/\.[^/.]+$/, "")
-      a.download = `${originalName}.docx`
+      a.download = fileName
+      a.style.display = 'none'
+      document.body.appendChild(a)
       a.click()
-      URL.revokeObjectURL(url)
+      setTimeout(() => {
+        document.body.removeChild(a)
+      }, 1500)
 
+      // Always set visible download link as well (in case browser blocks auto-download)
+      setDownloadUrl(url)
+      setDownloadName(fileName)
       setDone(true)
     } catch (err) {
       console.error(err)
@@ -60,7 +76,14 @@ export default function PdfToWordTool({ loggedIn }: { loggedIn: boolean }) {
     }
   }, [files])
 
-  const reset = () => { setFiles([]); setDone(false); setError(''); setProgress(0) }
+  const reset = () => {
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl)
+    setFiles([])
+    setDone(false)
+    setError('')
+    setProgress(0)
+    setDownloadUrl(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -128,12 +151,24 @@ export default function PdfToWordTool({ loggedIn }: { loggedIn: boolean }) {
             <span className="material-symbols-outlined text-primary" style={{ fontSize: 32 }}>check_circle</span>
           </div>
           <h3 className="text-headline-sm text-on-surface mb-2">Conversion Complete!</h3>
-          <p className="text-body-md text-on-surface-variant mb-6">Your editable Word document (.docx) has been downloaded.</p>
+          <p className="text-body-md text-on-surface-variant mb-6">Your editable Word document is ready to download.</p>
           
-          <button onClick={reset} className="inline-flex items-center gap-2 border border-outline text-on-surface font-bold px-6 py-3 rounded-xl hover:bg-surface-variant transition-colors text-sm">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span>
-            Convert another file
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                download={downloadName}
+                className="inline-flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-6 py-3 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors text-sm shadow-sm"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>
+                Download {downloadName}
+              </a>
+            )}
+            <button onClick={reset} className="inline-flex items-center justify-center gap-2 border border-outline text-on-surface font-bold px-6 py-3 rounded-xl hover:bg-surface-variant transition-colors text-sm">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span>
+              Convert another file
+            </button>
+          </div>
         </div>
       )}
     </div>

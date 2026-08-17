@@ -21,20 +21,33 @@ export default function PdfTool({ loggedIn }: { loggedIn: boolean }) {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch('http://127.0.0.1:8000/api/tools/pdf-to-text-local', {
+      const res = await fetch('/api/tools/ocr-pdf', {
         method: 'POST',
         body: formData,
       })
 
-      const data = await res.json().catch(() => ({}))
-      
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to extract text. Note: Free plan is limited to 5 pages.')
+        const errorText = await res.text()
+        let detail = 'Failed to extract text from PDF.'
+        try {
+          const parsed = JSON.parse(errorText)
+          if (parsed.detail) detail = parsed.detail
+        } catch {}
+        throw new Error(detail)
       }
 
-      setResult(data.text || 'No text found.')
+      let extractedText = ''
+      const contentType = res.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const data = await res.json()
+        extractedText = data.text || ''
+      } else {
+        extractedText = await res.text()
+      }
 
-      // Track usage (assuming you want to keep this)
+      setResult(extractedText || 'No text found in this PDF.')
+
+      // Track usage
       await fetch('/api/update-usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

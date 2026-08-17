@@ -20,40 +20,37 @@
 # production
 /build
 
-# misc
+# Python & Virtual Environments
+venv/
+/venv
+backend/venv/
+backend/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+backend/temp_*
+backend/test_*
+
+# IDE & Tooling
+.vscode/
+.idea/
+.gemini/
 .DS_Store
 *.pem
+stitch_*
 
-# debug
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
-# vercel
+# vercel & build
 .vercel
-
-# python & backend
-backend/venv/
-venv/
-ENV/
-env/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-*.pdf
-
-# temp & agent workspace
-.gemini/
-.tempmediaStorage/
-scratch/
-
-# typescript
 *.tsbuildinfo
 next-env.d.ts
-

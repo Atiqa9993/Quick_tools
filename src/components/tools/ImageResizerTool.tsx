@@ -101,8 +101,9 @@ export default function ImageResizerTool({ loggedIn }: { loggedIn: boolean }) {
       formData.append('file', files[0])
       formData.append('width', w.toString())
       formData.append('height', h.toString())
+      formData.append('maintain_aspect_ratio', lockAspectRatio ? 'true' : 'false')
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/image-resizer', {
+      const response = await fetch('/api/tools/image-resizer', {
         method: 'POST',
         body: formData,
       })

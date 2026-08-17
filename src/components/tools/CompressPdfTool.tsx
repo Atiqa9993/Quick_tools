@@ -66,7 +66,8 @@ export default function CompressPdfTool({ loggedIn }: { loggedIn: boolean }) {
         throw new Error(errData.detail || 'Failed to compress PDF on the server.')
       }
 
-      const blob = await response.blob()
+      const rawBlob = await response.blob()
+      const blob = new Blob([rawBlob], { type: 'application/pdf' })
 
       setStats({
         oldSize: file.size,
@@ -76,8 +77,14 @@ export default function CompressPdfTool({ loggedIn }: { loggedIn: boolean }) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `compressed-${file.name}`
+      const originalName = file.name || 'document.pdf'
+      const downloadName = originalName.toLowerCase().endsWith('.pdf')
+        ? `compressed-${originalName}`
+        : `compressed-${originalName}.pdf`
+      a.download = downloadName
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
       setDone(true)

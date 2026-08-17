@@ -78,7 +78,7 @@ export default function RemoveBackgroundTool({ loggedIn }: { loggedIn: boolean }
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/remove-background', {
+      const response = await fetch('/api/tools/remove-background', {
         method: 'POST',
         body: formData,
       })
@@ -124,7 +124,7 @@ export default function RemoveBackgroundTool({ loggedIn }: { loggedIn: boolean }
         formData.append('border_thickness', borderThickness.toString())
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/remove-background', {
+      const response = await fetch('/api/tools/remove-background', {
         method: 'POST',
         body: formData,
       })
