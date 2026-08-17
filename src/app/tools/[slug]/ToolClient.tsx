@@ -51,6 +51,11 @@ const ImageConverterTool = dynamic(() => import('@/components/tools/ImageConvert
   loading: () => <div className="p-8 text-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>
 })
 
+const MergeImagesTool = dynamic(() => import('@/components/tools/MergeImagesTool'), { 
+  ssr: false,
+  loading: () => <div className="p-8 text-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>
+})
+
 const ImageToTextTool = dynamic(() => import('@/components/tools/ImageToTextTool'), { 
   ssr: false,
   loading: () => <div className="p-8 text-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>
@@ -123,6 +128,7 @@ function ToolInterface({ slug, loggedIn, tool }: { slug: string; loggedIn: boole
     case 'resize-image':        return <ImageResizerTool loggedIn={loggedIn} />
     case 'background-remover':  return <RemoveBackgroundTool loggedIn={loggedIn} />
     case 'image-converter':     return <ImageConverterTool loggedIn={loggedIn} />
+    case 'merge-images':        return <MergeImagesTool loggedIn={loggedIn} />
     case 'image-to-text':        return <ImageToTextTool loggedIn={loggedIn} />
     case 'word-counter':         return <WordCounterTool loggedIn={loggedIn} />
     case 'case-converter':       return <CaseConverterTool loggedIn={loggedIn} />

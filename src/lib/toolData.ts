@@ -266,6 +266,32 @@ const IMAGE_CATEGORY: CategoryConfig = {
       }
     },
     {
+      slug: 'merge-images',
+      name: 'Merge Images',
+      desc: 'Combine multiple images vertically or horizontally into a single aligned canvas.',
+      badge: 'Free',
+      icon: 'call_merge',
+      categoryLabel: 'IMAGE UTILITY',
+      categoryIcon: 'image',
+      accepts: 'JPG, PNG, WEBP, GIF, BMP',
+      instructions: [
+        { text: 'Upload 2 to 10 images you wish to merge.' },
+        { text: 'Select Vertical (top-to-bottom) or Horizontal (side-by-side) layout.' },
+        { text: 'Download the combined high-resolution image.' }
+      ],
+      benefits: [
+        { icon: 'call_merge', title: 'Smart Alignment', desc: 'Automatically matches dimensions.' },
+        { icon: 'layers', title: 'Transparency Support', desc: 'Preserves PNG & WebP transparency.' },
+        { icon: 'bolt', title: 'Fast Processing', desc: 'Merges images in seconds.' },
+        { icon: 'verified', title: 'Free', desc: 'Merge up to 10 images at once.' }
+      ],
+      showcase: {
+        title: 'Combine Visuals Effortlessly',
+        desc: 'Create side-by-side comparisons or vertical photo strips with automatic height and width normalization.',
+        tags: ['Side-by-Side', 'Vertical Strips']
+      }
+    },
+    {
       slug: 'image-to-text',
       name: 'Image to Text',
       desc: 'Extract printed and handwritten text from any image using AI-powered OCR.',

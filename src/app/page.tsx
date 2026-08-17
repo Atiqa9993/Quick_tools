@@ -39,6 +39,7 @@ const categories: Category[] = [
       { slug: 'resize-image', icon: 'aspect_ratio', name: 'Resize Image', desc: 'Change image dimensions in pixels or percentage.' },
       { slug: 'background-remover', icon: 'person_remove', name: 'Background Remover', desc: 'AI-powered background removal for photos.' },
       { slug: 'image-converter', icon: 'sync_alt', name: 'Image Converter', desc: 'Convert any image between JPG, PNG, WEBP, GIF, BMP etc.' },
+      { slug: 'merge-images', icon: 'call_merge', name: 'Merge Images', desc: 'Combine multiple images vertically or horizontally into a single canvas.' },
       { slug: 'image-to-text', icon: 'document_scanner', name: 'Image to Text', desc: 'Extract printed & handwritten text from any image using AI.' },
     ],
   },
