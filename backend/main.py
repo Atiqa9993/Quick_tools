@@ -2137,9 +2137,169 @@ async def convert_image(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+def _process_image_merging(image_bytes_list: list[bytes], mode: str) -> tuple[bytes, str, str]:
+    """
+    Synchronous helper executed in thread pool for merging images.
+    Normalizes dimensions (max width for vertical, max height for horizontal)
+    and blits onto an RGBA canvas preserving transparency & aspect ratios.
+    """
+    pil_images: list[Image.Image] = []
+    resized_images: list[Image.Image] = []
+    canvas: Image.Image | None = None
+
+    try:
+        # Load all images into PIL
+        for b in image_bytes_list:
+            img = Image.open(io.BytesIO(b))
+            pil_images.append(img)
+
+        layout_mode = mode.lower()
+        if layout_mode not in ("vertical", "horizontal"):
+            layout_mode = "vertical"
+
+        has_transparency = any(
+            img.mode in ("RGBA", "LA") or "transparency" in img.info
+            for img in pil_images
+        )
+
+        if layout_mode == "vertical":
+            # 1. Dimension Normalization: Find max width
+            max_width = max(img.width for img in pil_images)
+
+            # 2. Resize all images to match max_width while preserving aspect ratio
+            for img in pil_images:
+                if img.width == max_width:
+                    resized_images.append(img.convert("RGBA"))
+                else:
+                    scale = max_width / float(img.width)
+                    new_height = max(1, int(img.height * scale))
+                    resized_img = img.resize((max_width, new_height), Image.Resampling.LANCZOS).convert("RGBA")
+                    resized_images.append(resized_img)
+
+            # 3. Canvas Creation & Blitting
+            total_width = max_width
+            total_height = sum(img.height for img in resized_images)
+
+            canvas = Image.new("RGBA", (total_width, total_height), (0, 0, 0, 0))
+            y_offset = 0
+            for img in resized_images:
+                canvas.paste(img, (0, y_offset), mask=img.split()[3])
+                y_offset += img.height
+
+        else:  # horizontal mode
+            # 1. Dimension Normalization: Find max height
+            max_height = max(img.height for img in pil_images)
+
+            # 2. Resize all images to match max_height while preserving aspect ratio
+            for img in pil_images:
+                if img.height == max_height:
+                    resized_images.append(img.convert("RGBA"))
+                else:
+                    scale = max_height / float(img.height)
+                    new_width = max(1, int(img.width * scale))
+                    resized_img = img.resize((new_width, max_height), Image.Resampling.LANCZOS).convert("RGBA")
+                    resized_images.append(resized_img)
+
+            # 3. Canvas Creation & Blitting
+            total_width = sum(img.width for img in resized_images)
+            total_height = max_height
+
+            canvas = Image.new("RGBA", (total_width, total_height), (0, 0, 0, 0))
+            x_offset = 0
+            for img in resized_images:
+                canvas.paste(img, (x_offset, 0), mask=img.split()[3])
+                x_offset += img.width
+
+        # 4. Optimized Output Buffer
+        output_buffer = io.BytesIO()
+        if has_transparency:
+            canvas.save(output_buffer, format="PNG", optimize=True)
+            mime = "image/png"
+            ext = "png"
+        else:
+            rgb_canvas = canvas.convert("RGB")
+            rgb_canvas.save(
+                output_buffer,
+                format="JPEG",
+                quality=85,
+                optimize=True,
+                subsampling="4:2:0",
+                exif=b""
+            )
+            rgb_canvas.close()
+            mime = "image/jpeg"
+            ext = "jpg"
+
+        out_filename = f"merged_image_{layout_mode}.{ext}"
+        return output_buffer.getvalue(), mime, out_filename
+
+    finally:
+        # Resource cleanup to prevent memory leaks
+        for img in pil_images:
+            try:
+                img.close()
+            except Exception:
+                pass
+        for img in resized_images:
+            try:
+                img.close()
+            except Exception:
+                pass
+        if canvas is not None:
+            try:
+                canvas.close()
+            except Exception:
+                pass
+
+
+@app.post("/api/tools/merge-images")
+async def merge_images(
+    files: list[UploadFile] = File(...),
+    mode: str = Form("vertical")
+):
+    """
+    Endpoint: Image Merger
+    Description: Merges 2 to 10 images vertically or horizontally with automatic dimension normalization.
+    Returns: A single merged image (PNG if transparent, optimized JPEG quality=85 otherwise).
+    """
+    # 1. Max Limits & Validation
+    if not files or len(files) < 2:
+        raise HTTPException(status_code=400, detail="Please upload at least 2 images to merge.")
+
+    if len(files) > 10:
+        raise HTTPException(status_code=400, detail="Free tier limit reached. You can merge up to 10 images at a time.")
+
+    try:
+        # Read all files asynchronously
+        image_bytes_list = []
+        for file in files:
+            bytes_data = await file.read()
+            await file.close()
+            image_bytes_list.append(bytes_data)
+
+        # Offload heavy image processing to thread pool
+        content_bytes, mime, out_name = await run_in_threadpool(
+            _process_image_merging,
+            image_bytes_list=image_bytes_list,
+            mode=mode
+        )
+
+        return Response(
+            content=content_bytes,
+            media_type=mime,
+            headers={"Content-Disposition": f'attachment; filename="{out_name}"'}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ==============================================================================
 # ENTRY POINT
 # Runs the Uvicorn ASGI server when script is executed directly.
 # ==============================================================================
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+
