@@ -3,16 +3,16 @@ import { NextRequest } from 'next/server'
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
-
     const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
-    const response = await fetch(`${backendUrl}/api/tools/image-resizer`, {
+
+    const response = await fetch(`${backendUrl}/api/tools/image-compressor`, {
       method: 'POST',
       body: formData,
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      let detail = 'Failed to resize image.'
+      let detail = 'Failed to compress image.'
       try {
         const parsed = JSON.parse(errorText)
         if (parsed.detail) detail = parsed.detail
@@ -28,12 +28,12 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-        'Content-Disposition': response.headers.get('content-disposition') || 'attachment; filename="resized_image"',
+        'Content-Disposition': response.headers.get('content-disposition') || 'attachment; filename="compressed_image"',
       },
     })
   } catch (error) {
-    console.error('Image Resizer Route Error:', error)
-    return new Response(JSON.stringify({ detail: 'Internal Server Error connecting to image resizer service.' }), {
+    console.error('Image Compressor Route Error:', error)
+    return new Response(JSON.stringify({ detail: 'Internal Server Error connecting to image compression service.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })

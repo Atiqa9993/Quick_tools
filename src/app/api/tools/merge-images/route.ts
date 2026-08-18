@@ -4,7 +4,8 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
 
-    const response = await fetch('http://127.0.0.1:8000/api/tools/merge-images', {
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+    const response = await fetch(`${backendUrl}/api/tools/merge-images`, {
       method: 'POST',
       body: formData,
     })

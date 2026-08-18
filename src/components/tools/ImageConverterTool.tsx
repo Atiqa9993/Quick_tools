@@ -55,7 +55,7 @@ export default function ImageConverterTool({ loggedIn }: { loggedIn: boolean }) 
       formData.append('file', files[0])
       formData.append('target_format', targetFormat)
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/image-converter', {
+      const response = await fetch('/api/tools/image-converter', {
         method: 'POST',
         body: formData,
       })

@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     formData.append('base64_data', base64)
     formData.append('mime_type', mimeType)
 
-    const res = await fetch('http://127.0.0.1:8000/api/ocr', {
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+    const res = await fetch(`${backendUrl}/api/ocr`, {
       method: 'POST',
       body: formData,
     })

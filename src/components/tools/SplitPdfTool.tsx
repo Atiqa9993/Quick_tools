@@ -90,7 +90,7 @@ export default function SplitPdfTool({ loggedIn }: { loggedIn: boolean }) {
         formData.append('target_size_mb', targetSizeMb)
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/tools/split-pdf', {
+      const response = await fetch('/api/tools/split-pdf', {
         method: 'POST',
         body: formData,
       })

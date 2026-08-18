@@ -5,7 +5,8 @@ export const runtime = 'nodejs'; // ensure Node runtime for fetch
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const backendResponse = await fetch('http://127.0.0.1:8000/api/tools/compress-pdf', {
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
+    const backendResponse = await fetch(`${backendUrl}/api/tools/compress-pdf`, {
       method: 'POST',
       body: formData,
     });
