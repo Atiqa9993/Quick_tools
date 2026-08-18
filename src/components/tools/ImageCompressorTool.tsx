@@ -45,7 +45,7 @@ export default function ImageCompressorTool({ loggedIn }: { loggedIn: boolean })
       formData.append('file', files[0])
       formData.append('target_kb', targetKb)
 
-      const response = await fetch('/api/tools/image-compressor', {
+      const response = await fetch('http://127.0.0.1:8000/api/tools/image-compressor', {
         method: 'POST',
         body: formData,
       })

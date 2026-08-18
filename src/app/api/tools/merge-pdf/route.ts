@@ -5,8 +5,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     
     // Forward the formData containing files directly to the FastAPI backend
-    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
-    const response = await fetch(`${backendUrl}/api/tools/merge-pdf`, {
+    const response = await fetch('http://127.0.0.1:8000/api/tools/merge-pdf', {
       method: 'POST',
       body: formData,
     })

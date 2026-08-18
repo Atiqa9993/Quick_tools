@@ -5,8 +5,7 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
-    const backendResponse = await fetch(`${backendUrl}/api/tools/pdf-to-word`, {
+    const backendResponse = await fetch('http://127.0.0.1:8000/api/tools/pdf-to-word', {
       method: 'POST',
       body: formData,
     });
