@@ -8,6 +8,11 @@ echo.
 
 cd /d "%~dp0"
 
+if exist ".env.local" goto check_node_modules
+echo [SETUP] Creating default .env.local file...
+copy .env.example .env.local >nul
+
+:check_node_modules
 if exist "node_modules" goto check_venv
 echo [1/4] Installing Frontend dependencies...
 call npm install
