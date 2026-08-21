@@ -15,14 +15,14 @@ const MAIN_TABS = [
   { key: 'file',     label: 'File / PDF',      icon: 'picture_as_pdf',placeholder: 'https://drive.google.com/file/d/...' },
 ]
 
-/* ── Rich Color Presets with Vivid Preview Colors ── */
+/* ── Rich Color Presets with Vivid Swatch Colors ── */
 const COLOR_PRESETS = [
-  { name: 'Classic Black', fg: '#000000', bg: '#ffffff' },
-  { name: 'Ocean Blue',   fg: '#0284c7', bg: '#ffffff' },
-  { name: 'Emerald Green',fg: '#059669', bg: '#ffffff' },
-  { name: 'Crimson Red',  fg: '#dc2626', bg: '#ffffff' },
-  { name: 'Royal Purple', fg: '#7c3aed', bg: '#ffffff' },
-  { name: 'Midnight Dark',fg: '#ffffff', bg: '#0f172a' },
+  { name: 'Classic Black', fg: '#000000', bg: '#ffffff', swatch: '#000000' },
+  { name: 'Ocean Blue',   fg: '#0284c7', bg: '#ffffff', swatch: '#0284c7' },
+  { name: 'Emerald Green',fg: '#059669', bg: '#ffffff', swatch: '#059669' },
+  { name: 'Crimson Red',  fg: '#dc2626', bg: '#ffffff', swatch: '#dc2626' },
+  { name: 'Royal Purple', fg: '#7c3aed', bg: '#ffffff', swatch: '#7c3aed' },
+  { name: 'Midnight Dark',fg: '#ffffff', bg: '#0f172a', swatch: '#0f172a' },
 ]
 
 /* ── Frame Templates ── */
@@ -406,10 +406,10 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                                 : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                           >
-                            {/* Solid Vibrant Color Swatch Circle */}
+                            {/* Solid Swatch Circle */}
                             <div
                               className="w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 shadow-md flex items-center justify-center transition-transform"
-                              style={{ backgroundColor: preset.fg }}
+                              style={{ backgroundColor: preset.swatch }}
                             >
                               {isSelected && (
                                 <span className="material-symbols-outlined text-white text-sm font-black drop-shadow-sm">
@@ -616,10 +616,10 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                     />
                   ) : (
                     <div className="w-[220px] h-[220px] flex flex-col items-center justify-center text-center p-4">
-                      <span className="material-symbols-outlined text-slate-400 text-5xl mb-2">
+                      <span className="material-symbols-outlined text-5xl mb-2 transition-colors opacity-90" style={{ color: fgColor }}>
                         qr_code_2
                       </span>
-                      <p className="text-xs font-bold text-slate-500">
+                      <p className="text-xs font-bold transition-colors opacity-90" style={{ color: fgColor }}>
                         Enter details on the left to view your live QR code.
                       </p>
                     </div>
