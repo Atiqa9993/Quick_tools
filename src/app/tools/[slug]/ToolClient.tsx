@@ -1,7 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import Footer from '@/components/Footer'
 import HandwritingTool from '@/components/tools/HandwritingTool'
 import PdfTool from '@/components/tools/PdfTool'
 import ImageToPdfTool from '@/components/tools/ImageToPdfTool'
@@ -153,18 +155,22 @@ export default function ToolClient({ slug }: { slug: string }) {
   /* ── 404 state ── */
   if (!tool) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-center px-6">
-        <span className="material-symbols-outlined text-outline-variant mb-4" style={{ fontSize: 48 }}>
-          sentiment_dissatisfied
-        </span>
-        <h1 className="text-headline-md text-on-surface mb-2">Tool not found</h1>
-        <p className="text-body-md text-on-surface-variant mb-6">
-          The tool &quot;{slug}&quot; doesn&apos;t exist.
-        </p>
-        <Link href="/" className="text-primary hover:underline font-medium">
-          ← Back to all tools
-        </Link>
-      </div>
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center py-32 text-center px-6">
+          <span className="material-symbols-outlined text-outline-variant mb-4" style={{ fontSize: 48 }}>
+            sentiment_dissatisfied
+          </span>
+          <h1 className="text-headline-md text-on-surface mb-2">Tool not found</h1>
+          <p className="text-body-md text-on-surface-variant mb-6">
+            The tool "{slug}" doesn&apos;t exist.
+          </p>
+          <Link href="/" className="text-primary hover:underline font-medium">
+            ← Back to all tools
+          </Link>
+        </div>
+        <Footer />
+      </main>
     )
   }
 
@@ -172,7 +178,9 @@ export default function ToolClient({ slug }: { slug: string }) {
   const category = appCategories.find(c => c.label === tool.categoryLabel) || appCategories[0]
 
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
+      <Navbar />
+
       <div className="flex max-w-[1280px] mx-auto min-h-[calc(100vh-64px)]">
 
         {/* ═══ Left Sidebar ═══ */}
@@ -230,11 +238,11 @@ export default function ToolClient({ slug }: { slug: string }) {
 
           {/* ── Workspace: Tool UI ── */}
           <section className="mb-10">
-            <div className="relative border-2 border-dashed border-outline-variant bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:border-primary/40">
+            <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 transition-all duration-300 hover:border-primary/40">
               {/* Badge */}
-              <div className="absolute top-4 right-4 bg-secondary-container/20 text-secondary-container px-3 py-1 rounded-full flex items-center gap-1.5 z-10">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
-                <span className="text-label-md font-bold">Cloud Processing</span>
+              <div className="absolute top-4 right-4 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-3 py-1 rounded-full flex items-center gap-1.5 z-10 shadow-xs">
+                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400" style={{ fontSize: 16 }}>bolt</span>
+                <span className="text-xs font-bold">Cloud Processing</span>
               </div>
 
               <div className="pt-4 min-h-[300px] flex flex-col justify-center">
@@ -310,6 +318,8 @@ export default function ToolClient({ slug }: { slug: string }) {
 
         </div>
       </div>
-    </div>
+
+      <Footer />
+    </main>
   )
 }

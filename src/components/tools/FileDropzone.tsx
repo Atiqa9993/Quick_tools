@@ -48,27 +48,31 @@ export default function FileDropzone({
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={`relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-200 ${
-          isDragging ? 'border-blue-400 bg-blue-50/50' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50/50'
+          isDragging
+            ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40'
+            : 'border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 bg-slate-50/30 dark:bg-slate-900/30'
         }`}
       >
         <input ref={inputRef} type="file" accept={accept} multiple={multiple} onChange={handleInput} className="hidden" />
         <div className="flex flex-col items-center gap-3">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${
-            isDragging ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors border ${
+            isDragging
+              ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 shadow-xs'
           }`}>
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
               Drag &amp; drop {multiple ? 'files' : 'a file'} here
             </p>
-            <p className="text-xs text-slate-400 mt-1">
-              or <span className="text-blue-600 font-medium">click to browse</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              or <span className="text-blue-600 dark:text-blue-400 font-bold hover:underline">click to browse</span>
             </p>
           </div>
-          <p className="text-xs text-slate-400 bg-slate-50 px-3 py-1 rounded-full">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full shadow-2xs">
             {acceptLabel}{multiple ? ` · Up to ${maxFiles} files` : ''}
           </p>
         </div>
@@ -77,21 +81,21 @@ export default function FileDropzone({
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((file, i) => (
-            <div key={`${file.name}-${i}`} className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
+            <div key={`${file.name}-${i}`} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-xs">
               {file.type.startsWith('image/') ? (
-                <img src={URL.createObjectURL(file)} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                <img src={URL.createObjectURL(file)} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-700" />
               ) : (
-                <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-950/60 rounded-lg flex items-center justify-center flex-shrink-0 border border-red-200 dark:border-red-900">
+                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                   </svg>
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
-                <p className="text-xs text-slate-400">{formatSize(file.size)}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{file.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formatSize(file.size)}</p>
               </div>
-              <button onClick={(e) => { e.stopPropagation(); removeFile(i) }} className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-red-500 transition-colors">
+              <button onClick={(e) => { e.stopPropagation(); removeFile(i) }} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
