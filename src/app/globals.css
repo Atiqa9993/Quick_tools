@@ -326,3 +326,15 @@ body {
     transform: translateY(10px);
     transition: opacity 0.2s, transform 0.2s;
 }
+
+/* ═══════════════════════════════════════════════
+   Utility: hide scrollbar (keep scroll behaviour)
+   ═══════════════════════════════════════════════ */
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

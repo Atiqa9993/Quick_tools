@@ -1,9 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import Navbar from '@/components/Navbar'
 import Link from 'next/link'
-import Footer from '@/components/Footer'
 import HandwritingTool from '@/components/tools/HandwritingTool'
 import PdfTool from '@/components/tools/PdfTool'
 import ImageToPdfTool from '@/components/tools/ImageToPdfTool'
@@ -155,22 +153,18 @@ export default function ToolClient({ slug }: { slug: string }) {
   /* ── 404 state ── */
   if (!tool) {
     return (
-      <main className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex flex-col items-center justify-center py-32 text-center px-6">
-          <span className="material-symbols-outlined text-outline-variant mb-4" style={{ fontSize: 48 }}>
-            sentiment_dissatisfied
-          </span>
-          <h1 className="text-headline-md text-on-surface mb-2">Tool not found</h1>
-          <p className="text-body-md text-on-surface-variant mb-6">
-            The tool "{slug}" doesn&apos;t exist.
-          </p>
-          <Link href="/" className="text-primary hover:underline font-medium">
-            ← Back to all tools
-          </Link>
-        </div>
-        <Footer />
-      </main>
+      <div className="flex flex-col items-center justify-center py-32 text-center px-6">
+        <span className="material-symbols-outlined text-outline-variant mb-4" style={{ fontSize: 48 }}>
+          sentiment_dissatisfied
+        </span>
+        <h1 className="text-headline-md text-on-surface mb-2">Tool not found</h1>
+        <p className="text-body-md text-on-surface-variant mb-6">
+          The tool &quot;{slug}&quot; doesn&apos;t exist.
+        </p>
+        <Link href="/" className="text-primary hover:underline font-medium">
+          ← Back to all tools
+        </Link>
+      </div>
     )
   }
 
@@ -178,9 +172,7 @@ export default function ToolClient({ slug }: { slug: string }) {
   const category = appCategories.find(c => c.label === tool.categoryLabel) || appCategories[0]
 
   return (
-    <main className="min-h-screen bg-background">
-      <Navbar />
-
+    <div className="min-h-screen bg-background">
       <div className="flex max-w-[1280px] mx-auto min-h-[calc(100vh-64px)]">
 
         {/* ═══ Left Sidebar ═══ */}
@@ -318,8 +310,6 @@ export default function ToolClient({ slug }: { slug: string }) {
 
         </div>
       </div>
-
-      <Footer />
-    </main>
+    </div>
   )
 }
