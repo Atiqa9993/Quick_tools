@@ -579,11 +579,10 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
               </span>
             </div>
 
-            {/* PREVIEW CONTAINER */}
+            {/* PREVIEW CONTAINER (NEUTRAL SURFACE) */}
             <div
               ref={svgContainerRef}
-              className="flex flex-col items-center justify-center p-6 rounded-2xl border border-slate-200 dark:border-slate-700 transition-all shadow-inner relative"
-              style={{ backgroundColor: bgColor }}
+              className="flex flex-col items-center justify-center p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 transition-all relative min-h-[280px]"
             >
               <div className="flex flex-col items-center">
                 {frameStyle === 'badge' && (
@@ -592,7 +591,11 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                   </div>
                 )}
 
-                <div className={`p-4 rounded-xl ${frameStyle === 'simple' || frameStyle === 'scanme' ? 'border-4 border-blue-600' : ''}`}>
+                {/* INNER QR CARD WITH CUSTOM BG COLOR */}
+                <div
+                  className={`p-4 rounded-xl shadow-sm transition-all ${frameStyle === 'simple' || frameStyle === 'scanme' ? 'border-4 border-blue-600' : 'border border-slate-200 dark:border-slate-700'}`}
+                  style={{ backgroundColor: bgColor }}
+                >
                   {isValid ? (
                     <QRCodeSVG
                       value={qrValue}
