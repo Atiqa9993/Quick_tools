@@ -4,7 +4,7 @@ import { useState, useRef, ChangeEvent } from 'react'
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react'
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   TOP 6 HIGH-DEMAND CATEGORIES ONLY
+   TOP 6 HIGH-DEMAND CATEGORIES
    ───────────────────────────────────────────────────────────────────────────── */
 const MAIN_TABS = [
   { key: 'url',      label: 'URL / Link',      icon: 'link',          placeholder: 'https://example.com' },
@@ -15,14 +15,14 @@ const MAIN_TABS = [
   { key: 'file',     label: 'File / PDF',      icon: 'picture_as_pdf',placeholder: 'https://drive.google.com/file/d/...' },
 ]
 
-/* ── Color Presets ── */
+/* ── Rich Color Presets with Vivid Preview Colors ── */
 const COLOR_PRESETS = [
   { name: 'Classic Black', fg: '#000000', bg: '#ffffff' },
-  { name: 'Ocean Blue',   fg: '#0ea5e9', bg: '#ffffff' },
-  { name: 'Emerald Green',fg: '#10b981', bg: '#ffffff' },
-  { name: 'Crimson Red',  fg: '#ef4444', bg: '#ffffff' },
-  { name: 'Royal Purple', fg: '#8b5cf6', bg: '#ffffff' },
-  { name: 'Midnight Dark',fg: '#f8fafc', bg: '#0f172a' },
+  { name: 'Ocean Blue',   fg: '#0284c7', bg: '#ffffff' },
+  { name: 'Emerald Green',fg: '#059669', bg: '#ffffff' },
+  { name: 'Crimson Red',  fg: '#dc2626', bg: '#ffffff' },
+  { name: 'Royal Purple', fg: '#7c3aed', bg: '#ffffff' },
+  { name: 'Midnight Dark',fg: '#ffffff', bg: '#0f172a' },
 ]
 
 /* ── Frame Templates ── */
@@ -41,25 +41,24 @@ const RESOLUTION_OPTIONS = [
 ]
 
 export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }) {
-  // Top level active tab
+  // Active Tab
   const [activeTab, setActiveTab] = useState<string>('url')
 
-  // Form Fields per tab
+  // Fields per tab
   const [fields, setFields] = useState<Record<string, string>>({ url: '' })
 
-  // Customization Accordion State
-  const [activeAccordion, setActiveAccordion] = useState<'content' | 'customize'>('content')
+  // Customization Navigation
   const [activeSubTab, setActiveSubTab] = useState<'colors' | 'frame' | 'logo'>('colors')
 
   // Color Controls
-  const [fgColor, setFgColor] = useState<string>('#000000')
+  const [fgColor, setFgColor] = useState<string>('#7c3aed') // Default Royal Purple
   const [bgColor, setBgColor] = useState<string>('#ffffff')
 
-  // Frame Option
+  // Frame Settings
   const [frameStyle, setFrameStyle] = useState<string>('none')
   const [frameText, setFrameText] = useState<string>('SCAN ME')
 
-  // Logo Upload
+  // Logo Settings
   const [logoSrc, setLogoSrc] = useState<string | null>(null)
 
   // Download Config
@@ -69,7 +68,6 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const svgContainerRef = useRef<HTMLDivElement | null>(null)
 
-  // Field updater
   const updateField = (key: string, value: string) => {
     setFields(prev => ({ ...prev, [key]: value }))
   }
@@ -130,21 +128,18 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
     }
   }
 
-  // High quality Download Handler
+  // Download Handler
   const handleDownload = () => {
     if (!isValid) return
 
     if (downloadFormat === 'png') {
       const canvas = canvasRef.current
       if (!canvas) return
-
-      // Draw high resolution export
       const link = document.createElement('a')
       link.download = `qrcode_${activeTab}_${downloadSize}x${downloadSize}.png`
       link.href = canvas.toDataURL('image/png', 1.0)
       link.click()
     } else {
-      // SVG Download
       const svgElement = svgContainerRef.current?.querySelector('svg')
       if (!svgElement) return
 
@@ -160,10 +155,10 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
     }
   }
 
-  // Render input fields according to active tab
+  // Render input fields
   const renderTabInputs = () => {
-    const inputClass = "w-full bg-surface-container rounded-xl border border-outline-variant px-4 py-3 text-sm text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-on-surface-variant/40"
-    const labelClass = "text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5 block"
+    const inputClass = "w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-400 font-medium"
+    const labelClass = "text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 block"
 
     switch (activeTab) {
       case 'url':
@@ -174,7 +169,7 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
               type="url"
               value={fields.url || ''}
               onChange={e => updateField('url', e.target.value)}
-              placeholder="https://yourwebsite.com"
+              placeholder="https://www.instagram.com/"
               className={inputClass}
               autoFocus
             />
@@ -298,7 +293,7 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                 autoFocus
               />
             </div>
-            <p className="text-xs text-on-surface-variant/70">
+            <p className="text-xs text-slate-500">
               Paste a public Google Drive, Dropbox, or PDF cloud link to generate your PDF QR code.
             </p>
           </div>
@@ -310,8 +305,8 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* ── 1. TOP TABS NAVIGATION (6 HIGH-DEMAND CATEGORIES) ── */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-2 shadow-sm">
+      {/* ── 1. TOP TABS NAVIGATION ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 shadow-sm">
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {MAIN_TABS.map(t => {
             const isActive = activeTab === t.key
@@ -321,8 +316,8 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                 onClick={() => handleTabChange(t.key)}
                 className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl transition-all font-bold text-xs ${
                   isActive
-                    ? 'bg-primary text-on-primary shadow-md shadow-primary/20 scale-[1.02]'
-                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 scale-[1.02]'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 <span className="material-symbols-outlined text-xl">{t.icon}</span>
@@ -333,56 +328,56 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
         </div>
       </div>
 
-      {/* ── SPLIT LAYOUT ARCHITECTURE ── */}
+      {/* ── SPLIT LAYOUT ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* ── 2. LEFT COLUMN: ADD CONTENT & CUSTOMIZE ── */}
+        {/* ── 2. LEFT COLUMN: CONTENT & CUSTOMIZE ── */}
         <div className="lg:col-span-7 space-y-5">
           
           {/* CONTENT STEP CONTAINER */}
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
-              <h2 className="text-sm font-extrabold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">1</span>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-black">1</span>
                 Add {MAIN_TABS.find(t => t.key === activeTab)?.label} Content
               </h2>
-              <span className="text-xs font-semibold text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/20">
+              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800">
                 Live Sync
               </span>
             </div>
             {renderTabInputs()}
           </div>
 
-          {/* ELEGANT CUSTOMIZE ACCORDION */}
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-outline-variant/60 flex items-center justify-between">
-              <h2 className="text-sm font-extrabold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">2</span>
+          {/* CUSTOMIZE SECTION WITH HIGH CONTRAST COLORS */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-black">2</span>
                 Customize QR Design
               </h2>
               
-              {/* SUB TABS NAVIGATION */}
-              <div className="flex bg-surface-container rounded-xl p-1 gap-1 border border-outline-variant">
+              {/* SUB TABS */}
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1 border border-slate-200 dark:border-slate-700">
                 <button
-                  onClick={() => { setActiveAccordion('customize'); setActiveSubTab('colors'); }}
+                  onClick={() => setActiveSubTab('colors')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    activeSubTab === 'colors' ? 'bg-surface text-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                    activeSubTab === 'colors' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   Colors
                 </button>
                 <button
-                  onClick={() => { setActiveAccordion('customize'); setActiveSubTab('frame'); }}
+                  onClick={() => setActiveSubTab('frame')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    activeSubTab === 'frame' ? 'bg-surface text-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                    activeSubTab === 'frame' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   Frame
                 </button>
                 <button
-                  onClick={() => { setActiveAccordion('customize'); setActiveSubTab('logo'); }}
+                  onClick={() => setActiveSubTab('logo')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    activeSubTab === 'logo' ? 'bg-surface text-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                    activeSubTab === 'logo' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   Logo
@@ -395,53 +390,77 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
               {activeSubTab === 'colors' && (
                 <div className="space-y-5 animate-fadeIn">
                   <div>
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 block">
                       Color Presets
                     </label>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-                      {COLOR_PRESETS.map((preset, i) => (
-                        <button
-                          key={i}
-                          onClick={() => { setFgColor(preset.fg); setBgColor(preset.bg); }}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all ${
-                            fgColor === preset.fg && bgColor === preset.bg
-                              ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                              : 'border-outline-variant hover:bg-surface-container'
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-full border border-outline-variant flex overflow-hidden shadow-inner">
-                            <div className="w-1/2 h-full" style={{ backgroundColor: preset.fg }}></div>
-                            <div className="w-1/2 h-full" style={{ backgroundColor: preset.bg }}></div>
-                          </div>
-                          <span className="text-[10px] font-bold text-on-surface-variant truncate w-full text-center">{preset.name}</span>
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+                      {COLOR_PRESETS.map((preset, i) => {
+                        const isSelected = fgColor.toLowerCase() === preset.fg.toLowerCase() && bgColor.toLowerCase() === preset.bg.toLowerCase()
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => { setFgColor(preset.fg); setBgColor(preset.bg); }}
+                            className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border-2 transition-all ${
+                              isSelected
+                                ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20 scale-105'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {/* Color Swatch Circle */}
+                            <div className="w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 overflow-hidden relative shadow-sm">
+                              <div className="w-1/2 h-full absolute left-0" style={{ backgroundColor: preset.fg }}></div>
+                              <div className="w-1/2 h-full absolute right-0" style={{ backgroundColor: preset.bg }}></div>
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate w-full text-center">{preset.name}</span>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="bg-surface-container rounded-xl p-3 border border-outline-variant flex items-center justify-between">
-                      <span className="text-xs font-bold text-on-surface">Foreground</span>
-                      <div className="flex items-center gap-2">
+                  {/* CUSTOM COLOR PICKERS WITH CLEAR HEX CONTRAST */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {/* Foreground Picker */}
+                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Foreground Color</span>
+                        <span className="text-[10px] text-slate-500 font-medium">QR modules & bars</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
                         <input
                           type="color"
                           value={fgColor}
                           onChange={e => setFgColor(e.target.value)}
-                          className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                          className="w-7 h-7 rounded cursor-pointer bg-transparent border-0"
                         />
-                        <span className="text-xs font-mono text-on-surface-variant uppercase">{fgColor}</span>
+                        <input
+                          type="text"
+                          value={fgColor.toUpperCase()}
+                          onChange={e => setFgColor(e.target.value)}
+                          className="w-16 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 uppercase bg-transparent outline-none"
+                        />
                       </div>
                     </div>
-                    <div className="bg-surface-container rounded-xl p-3 border border-outline-variant flex items-center justify-between">
-                      <span className="text-xs font-bold text-on-surface">Background</span>
-                      <div className="flex items-center gap-2">
+
+                    {/* Background Picker */}
+                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Background Color</span>
+                        <span className="text-[10px] text-slate-500 font-medium">QR card background</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
                         <input
                           type="color"
                           value={bgColor}
                           onChange={e => setBgColor(e.target.value)}
-                          className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                          className="w-7 h-7 rounded cursor-pointer bg-transparent border-0"
                         />
-                        <span className="text-xs font-mono text-on-surface-variant uppercase">{bgColor}</span>
+                        <input
+                          type="text"
+                          value={bgColor.toUpperCase()}
+                          onChange={e => setBgColor(e.target.value)}
+                          className="w-16 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 uppercase bg-transparent outline-none"
+                        />
                       </div>
                     </div>
                   </div>
@@ -452,7 +471,7 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
               {activeSubTab === 'frame' && (
                 <div className="space-y-5 animate-fadeIn">
                   <div>
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 block">
                       Frame Template
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -462,8 +481,8 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                           onClick={() => setFrameStyle(t.id)}
                           className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all font-bold text-xs ${
                             frameStyle === t.id
-                              ? 'border-primary bg-primary/5 text-primary shadow-xs'
-                              : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
+                              ? 'border-blue-600 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 shadow-xs'
+                              : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                         >
                           <span className="material-symbols-outlined text-2xl">
@@ -477,7 +496,7 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
 
                   {frameStyle !== 'none' && (
                     <div className="pt-2">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5 block">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">
                         Frame Text
                       </label>
                       <input
@@ -485,7 +504,7 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                         value={frameText}
                         onChange={e => setFrameText(e.target.value)}
                         placeholder="SCAN ME"
-                        className="w-full bg-surface-container rounded-xl border border-outline-variant px-4 py-2.5 text-sm text-on-surface outline-none focus:border-primary"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-blue-600"
                       />
                     </div>
                   )}
@@ -495,34 +514,34 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
               {/* SUB TAB: LOGO UPLOAD */}
               {activeSubTab === 'logo' && (
                 <div className="space-y-4 animate-fadeIn">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
                     Upload Center Logo
                   </label>
                   
                   {logoSrc ? (
-                    <div className="flex items-center justify-between bg-surface-container rounded-xl p-3 border border-outline-variant">
+                    <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={logoSrc} alt="Center Logo" className="w-10 h-10 object-contain rounded-lg border border-outline-variant bg-white p-1" />
-                        <span className="text-xs font-bold text-on-surface">Logo Attached</span>
+                        <img src={logoSrc} alt="Center Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 bg-white p-1" />
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Logo Attached</span>
                       </div>
                       <button
                         onClick={() => setLogoSrc(null)}
-                        className="text-xs font-bold text-error hover:underline px-3 py-1.5 rounded-lg bg-error/10"
+                        className="text-xs font-bold text-red-600 hover:underline px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950"
                       >
                         Remove Logo
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant hover:border-primary rounded-xl cursor-pointer bg-surface-container/50 hover:bg-surface-container transition-all">
-                      <span className="material-symbols-outlined text-primary text-3xl mb-1">add_photo_alternate</span>
-                      <span className="text-xs font-bold text-on-surface">Click to upload brand logo</span>
-                      <span className="text-[10px] text-on-surface-variant/70 mt-1">PNG, JPG, SVG up to 2MB</span>
+                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-600 rounded-xl cursor-pointer bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100 transition-all">
+                      <span className="material-symbols-outlined text-blue-600 text-3xl mb-1">add_photo_alternate</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Click to upload brand logo</span>
+                      <span className="text-[10px] text-slate-500 mt-1">PNG, JPG, SVG up to 2MB</span>
                       <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                     </label>
                   )}
-                  <p className="text-[11px] text-on-surface-variant/70">
-                    High error correction (<code className="font-mono bg-surface-container px-1 rounded">level=&quot;H&quot;</code>) ensures your QR code remains 100% scannable with embedded logos.
+                  <p className="text-[11px] text-slate-500">
+                    High error correction (<code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded text-slate-700 dark:text-slate-300">level=&quot;H&quot;</code>) ensures your QR code remains 100% scannable with embedded logos.
                   </p>
                 </div>
               )}
@@ -530,33 +549,32 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
           </div>
         </div>
 
-        {/* ── 3. RIGHT COLUMN: STICKY PREVIEW & DOWNLOAD ── */}
+        {/* ── 3. RIGHT COLUMN: PREVIEW & DOWNLOAD ── */}
         <div className="lg:col-span-5">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm sticky top-24 space-y-6">
-            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
-              <h3 className="text-sm font-extrabold text-on-surface uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm sticky top-24 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                 Live QR Preview
               </h3>
-              <span className="text-xs font-mono font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">
+              <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                 Level H
               </span>
             </div>
 
-            {/* CENTRAL VECTOR PREVIEW CONTAINER */}
+            {/* PREVIEW CONTAINER */}
             <div
               ref={svgContainerRef}
-              className="flex flex-col items-center justify-center p-6 rounded-2xl border border-outline-variant transition-all shadow-inner relative"
+              className="flex flex-col items-center justify-center p-6 rounded-2xl border border-slate-200 dark:border-slate-700 transition-all shadow-inner relative"
               style={{ backgroundColor: bgColor }}
             >
-              {/* FRAME STYLING CONTAINER */}
               <div className="flex flex-col items-center">
                 {frameStyle === 'badge' && (
-                  <div className="bg-primary text-on-primary text-xs font-extrabold px-4 py-1 rounded-t-lg uppercase tracking-wider mb-2 shadow-xs">
+                  <div className="bg-blue-600 text-white text-xs font-extrabold px-4 py-1 rounded-t-lg uppercase tracking-wider mb-2 shadow-xs">
                     {frameText || 'SCAN ME'}
                   </div>
                 )}
 
-                <div className={`p-4 rounded-xl ${frameStyle === 'simple' || frameStyle === 'scanme' ? 'border-4 border-primary' : ''}`}>
+                <div className={`p-4 rounded-xl ${frameStyle === 'simple' || frameStyle === 'scanme' ? 'border-4 border-blue-600' : ''}`}>
                   {isValid ? (
                     <QRCodeSVG
                       value={qrValue}
@@ -580,10 +598,10 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                     />
                   ) : (
                     <div className="w-[220px] h-[220px] flex flex-col items-center justify-center text-center p-4">
-                      <span className="material-symbols-outlined text-on-surface-variant/30 text-5xl mb-2">
+                      <span className="material-symbols-outlined text-slate-400 text-5xl mb-2">
                         qr_code_2
                       </span>
-                      <p className="text-xs font-bold text-on-surface-variant/60">
+                      <p className="text-xs font-bold text-slate-500">
                         Enter details on the left to view your live QR code.
                       </p>
                     </div>
@@ -591,14 +609,14 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                 </div>
 
                 {frameStyle === 'scanme' && (
-                  <div className="bg-primary text-on-primary text-xs font-extrabold px-5 py-1.5 rounded-b-lg uppercase tracking-wider mt-2 shadow-xs">
+                  <div className="bg-blue-600 text-white text-xs font-extrabold px-5 py-1.5 rounded-b-lg uppercase tracking-wider mt-2 shadow-xs">
                     {frameText || 'SCAN ME'}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* HIDDEN CANVAS FOR HIGH-RES PNG EXPORT */}
+            {/* HIDDEN CANVAS FOR HIGH-RES EXPORT */}
             <div className="hidden">
               {isValid && (
                 <QRCodeCanvas
@@ -625,17 +643,17 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
               )}
             </div>
 
-            {/* DOWNLOAD CONFIGURATION & CONTROLS */}
+            {/* DOWNLOAD CONTROLS */}
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1 block">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 block">
                     Format
                   </label>
                   <select
                     value={downloadFormat}
                     onChange={e => setDownloadFormat(e.target.value as 'png' | 'svg')}
-                    className="w-full bg-surface-container rounded-xl border border-outline-variant px-3 py-2 text-xs font-bold text-on-surface outline-none cursor-pointer"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
                   >
                     <option value="png">PNG (Raster)</option>
                     <option value="svg">SVG (Vector)</option>
@@ -643,14 +661,14 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1 block">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 block">
                     Resolution
                   </label>
                   <select
                     value={downloadSize}
                     onChange={e => setDownloadSize(Number(e.target.value))}
                     disabled={downloadFormat === 'svg'}
-                    className="w-full bg-surface-container rounded-xl border border-outline-variant px-3 py-2 text-xs font-bold text-on-surface outline-none cursor-pointer disabled:opacity-50"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer disabled:opacity-50"
                   >
                     {RESOLUTION_OPTIONS.map(r => (
                       <option key={r.value} value={r.value}>
@@ -661,11 +679,11 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                 </div>
               </div>
 
-              {/* HIGH-VISIBILITY PRIMARY DOWNLOAD BUTTON */}
+              {/* PRIMARY DOWNLOAD BUTTON */}
               <button
                 onClick={handleDownload}
                 disabled={!isValid}
-                className="w-full bg-primary text-on-primary font-extrabold py-3.5 px-4 rounded-xl shadow-md shadow-primary/20 hover:bg-primary-container hover:text-on-primary-container transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full bg-blue-600 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <span className="material-symbols-outlined text-lg">download</span>
                 <span>Download QR Code ({downloadFormat.toUpperCase()})</span>
