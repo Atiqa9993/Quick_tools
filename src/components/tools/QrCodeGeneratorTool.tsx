@@ -406,10 +406,16 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                                 : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                           >
-                            {/* Color Swatch Circle */}
-                            <div className="w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 overflow-hidden relative shadow-sm">
-                              <div className="w-1/2 h-full absolute left-0" style={{ backgroundColor: preset.fg }}></div>
-                              <div className="w-1/2 h-full absolute right-0" style={{ backgroundColor: preset.bg }}></div>
+                            {/* Solid Vibrant Color Swatch Circle */}
+                            <div
+                              className="w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 shadow-md flex items-center justify-center transition-transform"
+                              style={{ backgroundColor: preset.fg }}
+                            >
+                              {isSelected && (
+                                <span className="material-symbols-outlined text-white text-sm font-black drop-shadow-sm">
+                                  check
+                                </span>
+                              )}
                             </div>
                             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate w-full text-center">{preset.name}</span>
                           </button>
@@ -418,48 +424,60 @@ export default function QrCodeGeneratorTool({ loggedIn }: { loggedIn?: boolean }
                     </div>
                   </div>
 
-                  {/* CUSTOM COLOR PICKERS WITH CLEAR HEX CONTRAST */}
+                  {/* CUSTOM COLOR PICKERS WITH BOLD SOLID SWATCHES */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                     {/* Foreground Picker */}
-                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-xs">
                       <div>
                         <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Foreground Color</span>
-                        <span className="text-[10px] text-slate-500 font-medium">QR modules & bars</span>
+                        <span className="text-[10px] text-slate-500 font-medium">QR modules & code bars</span>
                       </div>
-                      <div className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                        <input
-                          type="color"
-                          value={fgColor}
-                          onChange={e => setFgColor(e.target.value)}
-                          className="w-7 h-7 rounded cursor-pointer bg-transparent border-0"
-                        />
+                      <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs">
+                        <label
+                          className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 shadow-inner block relative overflow-hidden shrink-0"
+                          style={{ backgroundColor: fgColor }}
+                          title="Click to choose color"
+                        >
+                          <input
+                            type="color"
+                            value={fgColor}
+                            onChange={e => setFgColor(e.target.value)}
+                            className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
+                          />
+                        </label>
                         <input
                           type="text"
                           value={fgColor.toUpperCase()}
                           onChange={e => setFgColor(e.target.value)}
-                          className="w-16 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 uppercase bg-transparent outline-none"
+                          className="w-16 text-xs font-mono font-black text-slate-900 dark:text-slate-100 uppercase bg-transparent outline-none text-center"
                         />
                       </div>
                     </div>
 
                     {/* Background Picker */}
-                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-xs">
                       <div>
                         <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Background Color</span>
                         <span className="text-[10px] text-slate-500 font-medium">QR card background</span>
                       </div>
-                      <div className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                        <input
-                          type="color"
-                          value={bgColor}
-                          onChange={e => setBgColor(e.target.value)}
-                          className="w-7 h-7 rounded cursor-pointer bg-transparent border-0"
-                        />
+                      <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs">
+                        <label
+                          className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 shadow-inner block relative overflow-hidden shrink-0"
+                          style={{ backgroundColor: bgColor }}
+                          title="Click to choose color"
+                        >
+                          <input
+                            type="color"
+                            value={bgColor}
+                            onChange={e => setBgColor(e.target.value)}
+                            className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
+                          />
+                        </label>
                         <input
                           type="text"
                           value={bgColor.toUpperCase()}
                           onChange={e => setBgColor(e.target.value)}
-                          className="w-16 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 uppercase bg-transparent outline-none"
+                          className="w-16 text-xs font-mono font-black text-slate-900 dark:text-slate-100 uppercase bg-transparent outline-none text-center"
                         />
                       </div>
                     </div>
