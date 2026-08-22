@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthClient() {
@@ -14,6 +14,15 @@ export default function AuthClient() {
   const [messageType, setMessageType] = useState<'success' | 'error'>('error')
   const [successScreen, setSuccessScreen] = useState<'verify' | 'reset' | null>(null)
   const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams()
+
+  // Surface server-side OAuth errors forwarded via query string
+  useEffect(() => {
+    if (searchParams.get('error') === 'oauth_failed') {
+      showError('Google sign-in failed or was cancelled. Please try again.')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const showError = (msg: string) => {
     setMessage(msg)
