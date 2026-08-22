@@ -145,6 +145,17 @@ export default function AuthClient() {
     <main className="min-h-screen bg-surface-container-low flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-[440px] bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/50 backdrop-blur-md p-6 sm:p-8">
 
+        {/* ── Back to Home ── */}
+        <div className="mb-6">
+          <a
+            href="/"
+            className="inline-flex items-center gap-1.5 text-label-md text-on-surface-variant hover:text-primary transition-colors font-semibold"
+          >
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            Back to Home
+          </a>
+        </div>
+
         {/* ── Logo & Header ── */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
