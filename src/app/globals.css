@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ═══════════════════════════════════════════════
    QuickTools — Design Tokens (Stitch / MD3)
    ═══════════════════════════════════════════════ */
