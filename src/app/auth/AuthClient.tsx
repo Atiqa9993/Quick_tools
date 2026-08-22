@@ -19,10 +19,11 @@ export default function AuthClient() {
   // Surface server-side OAuth errors forwarded via query string
   useEffect(() => {
     if (searchParams.get('error') === 'oauth_failed') {
-      showError('Google sign-in failed or was cancelled. Please try again.')
+      const desc = searchParams.get('desc')
+      showError(desc ? `Google sign-in error: ${desc}` : 'Google sign-in failed or was cancelled. Please try again.')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [searchParams])
 
   const showError = (msg: string) => {
     setMessage(msg)

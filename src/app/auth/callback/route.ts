@@ -19,10 +19,19 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const origin = requestUrl.origin // dynamically resolved — no hardcoded strings
 
+  console.log('[auth/callback] Full Callback URL:', request.url)
+  console.log('[auth/callback] Search Params:', Object.fromEntries(requestUrl.searchParams.entries()))
+
   const code = requestUrl.searchParams.get('code')
+  const errorParam = requestUrl.searchParams.get('error')
+  const errorDescription = requestUrl.searchParams.get('error_description')
   const next = requestUrl.searchParams.get('next')?.trim() || '/'
 
-  // Guard: if no code is present, this is a bad/stale callback
+  if (errorParam || errorDescription) {
+    console.error('[auth/callback] OAuth provider error:', { errorParam, errorDescription })
+    return NextResponse.redirect(`${origin}/auth?error=oauth_failed&desc=${encodeURIComponent(errorDescription || errorParam || '')}`)
+  }
+
   if (!code) {
     console.warn('[auth/callback] No code parameter received — possible stale or replayed request.')
     return NextResponse.redirect(`${origin}/auth?error=oauth_failed`)
@@ -30,16 +39,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = await createSupabaseServerClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      // Log full error server-side for debugging in Node runtime / Vercel logs
-      console.error('[auth/callback] Code exchange failed:', {
-        message: error.message,
-        status: error.status,
-        code,
-      })
-      return NextResponse.redirect(`${origin}/auth?error=oauth_failed`)
+      console.error('[auth/callback] Code exchange failed detail:', error)
+      return NextResponse.redirect(`${origin}/auth?error=oauth_failed&desc=${encodeURIComponent(error.message)}`)
     }
 
     // Sanitise the `next` param — only allow same-origin relative paths
