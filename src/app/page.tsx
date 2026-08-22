@@ -2,19 +2,74 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { appCategories } from '@/lib/toolData'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 
-/* ─── All tools flattened for search ─── */
-const allCats = appCategories
+/* ─── Tool Data ─── */
+type Tool = {
+  slug: string
+  icon: string
+  name: string
+  desc: string
+}
+
+type Category = {
+  label: string
+  icon: string
+  tools: Tool[]
+}
+
+const categories: Category[] = [
+  {
+    label: 'PDF Tools',
+    icon: 'picture_as_pdf',
+    tools: [
+      { slug: 'compress-pdf', icon: 'compress', name: 'Compress PDF', desc: 'Reduce file size while optimizing for quality.' },
+      { slug: 'pdf-to-word', icon: 'description', name: 'PDF to Word', desc: 'Convert PDF files to editable Word documents.' },
+      { slug: 'merge-pdf', icon: 'call_merge', name: 'Merge PDF', desc: 'Combine multiple PDFs into a single file.' },
+      { slug: 'split-pdf', icon: 'call_split', name: 'Split PDF', desc: 'Extract pages or split into separate files.' },
+      { slug: 'pdf-to-text', icon: 'document_scanner', name: 'OCR PDF', desc: 'Extract text from scanned PDFs instantly using AI.' },
+    ],
+  },
+  {
+    label: 'Image Tools',
+    icon: 'image',
+    tools: [
+      { slug: 'image-compressor', icon: 'photo_size_select_small', name: 'Image Compressor', desc: 'Compress PNG, JPG, and SVG without losing quality.' },
+      { slug: 'resize-image', icon: 'aspect_ratio', name: 'Resize Image', desc: 'Change image dimensions in pixels or percentage.' },
+      { slug: 'background-remover', icon: 'person_remove', name: 'Background Remover', desc: 'AI-powered background removal for photos.' },
+      { slug: 'image-converter', icon: 'sync_alt', name: 'Image Converter', desc: 'Convert any image between JPG, PNG, WEBP, GIF, BMP etc.' },
+      { slug: 'merge-images', icon: 'call_merge', name: 'Merge Images', desc: 'Combine multiple images vertically or horizontally into a single canvas.' },
+      { slug: 'image-to-text', icon: 'document_scanner', name: 'Image to Text', desc: 'Extract printed & handwritten text from any image using AI.' },
+    ],
+  },
+  {
+    label: 'Text Tools',
+    icon: 'text_fields',
+    tools: [
+      { slug: 'word-counter', icon: 'pin', name: 'Word Counter', desc: 'Count words, characters, and reading time.' },
+      { slug: 'case-converter', icon: 'format_letter_spacing', name: 'Case Converter', desc: 'Toggle between uppercase, lowercase, and title case.' },
+      { slug: 'remove-line-breaks', icon: 'wrap_text', name: 'Remove Line Breaks', desc: 'Clean up text by removing extra spacing and breaks.' },
+    ],
+  },
+  {
+    label: 'Converters',
+    icon: 'swap_horiz',
+    tools: [
+      { slug: 'json-to-csv', icon: 'data_object', name: 'JSON to CSV/Excel', desc: 'Convert structured data for spreadsheet software.' },
+      { slug: 'unit-converter', icon: 'straighten', name: 'Unit Converter', desc: 'Length, weight, area, and volume conversions.' },
+      { slug: 'currency-converter', icon: 'payments', name: 'Currency Converter', desc: 'Real-time exchange rates for global currencies.' },
+      { slug: 'qr-code-generator', icon: 'qr_code_2', name: 'QR Code Generator', desc: 'Create custom QR codes for links, text, or WiFi.' },
+    ],
+  },
+]
+
+const allTools = categories.flatMap(c => c.tools)
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeFilter, setActiveFilter] = useState<string>('All')
 
-  const categoryLabels = ['All', ...appCategories.map(c => c.label)]
-
-  const filteredCategories = allCats
-    .filter(cat => activeFilter === 'All' || cat.label === activeFilter)
+  const filteredCategories = categories
     .map(cat => ({
       ...cat,
       tools: cat.tools.filter(
@@ -26,70 +81,70 @@ export default function Home() {
     .filter(cat => cat.tools.length > 0)
 
   return (
-    <div className="min-h-screen bg-background text-on-background">
+    <main className="min-h-screen bg-background text-on-background">
+      <Navbar />
 
-      {/* ═══════════════════════════════════════════════
-          HERO SECTION
-          ═══════════════════════════════════════════════ */}
-      <section className="pt-28 pb-16 px-6 text-center relative overflow-hidden">
-        {/* Subtle background gradient blobs */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute -top-20 right-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl" />
+      {/* ═══ Hero ═══ */}
+      <section className="pt-32 pb-16 container-max text-center">
+        <h1
+          className="text-on-surface font-extrabold tracking-tight mb-6 mx-auto"
+          style={{
+            fontSize: 'clamp(2rem, 5vw, 3.75rem)',
+            lineHeight: 1.1,
+            maxWidth: '48rem',
+            textWrap: 'balance',
+          }}
+        >
+          All your everyday tools, in one place
+        </h1>
+        <p className="text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10">
+          Simple, fast, and free online utilities for professionals and everyday users. No sign-up required.
+        </p>
+
+        {/* Search */}
+        <div className="max-w-2xl mx-auto relative search-glow group mt-12">
+          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-outline">
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>search</span>
+          </div>
+          <input
+            type="text"
+            className="w-full h-16 pl-14 pr-6 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-0 text-body-md shadow-sm transition-all outline-none"
+            placeholder="Find a tool (e.g., PDF to Word, Image Compressor)..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
         </div>
+      </section>
 
-        <div className="relative max-w-4xl mx-auto">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 bg-primary/8 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-label-md font-bold mb-6">
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
-            21+ Free Online Tools
+      {/* ═══ Simple Tools, Serious Privacy ═══ */}
+      <section className="bg-surface-container-low py-20 border-t border-outline-variant">
+        <div className="container-max grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+          <div className="lg:pr-12">
+            <h2
+              className="text-on-surface font-bold tracking-tight mb-6"
+              style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', lineHeight: 1.2, textWrap: 'balance' }}
+            >
+              Simple Tools, Serious Privacy
+            </h2>
+            <p className="text-body-lg text-on-surface-variant leading-relaxed">
+              QuickTools was built on the principle of zero-friction utility. We believe that everyday tasks like compressing an image or converting a PDF should be fast, free, and secure. That&apos;s why our tools process your data directly in your browser—your files never touch our servers.
+            </p>
           </div>
-
-          <h1
-            className="text-on-surface font-extrabold tracking-tight mb-6"
-            style={{
-              fontSize: 'clamp(2.2rem, 5.5vw, 4rem)',
-              lineHeight: 1.1,
-              textWrap: 'balance',
-            }}
-          >
-            All your everyday tools,{' '}
-            <span className="text-primary">in one place</span>
-          </h1>
-          <p className="text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10">
-            Simple, fast, and free online utilities for professionals and everyday users.
-            PDF tools, image tools, text &amp; OCR, converters — all in your browser. No sign-up required.
-          </p>
-
-          {/* ── Search Bar ── */}
-          <div className="max-w-2xl mx-auto relative search-glow">
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-outline">
-              <span className="material-symbols-outlined" style={{ fontSize: 22 }}>search</span>
-            </div>
-            <input
-              id="tool-search"
-              type="text"
-              className="w-full h-16 pl-14 pr-6 rounded-2xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-0 text-body-md shadow-sm transition-all outline-none"
-              placeholder="Find a tool (e.g. compress PDF, remove background)..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          {/* ── Stats Row ── */}
-          <div className="flex flex-wrap justify-center gap-8 mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { icon: 'bolt', label: '21 Tools', sub: 'and growing' },
-              { icon: 'shield', label: '100% Private', sub: 'files stay in browser' },
-              { icon: 'payments', label: 'Totally Free', sub: 'no sign-up needed' },
-            ].map(stat => (
-              <div key={stat.label} className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary" style={{ fontSize: 18 }}>{stat.icon}</span>
-                </div>
-                <div className="text-left">
-                  <div className="text-label-md font-bold text-on-surface">{stat.label}</div>
-                  <div className="text-[11px] text-on-surface-variant">{stat.sub}</div>
+              { icon: 'bolt', label: 'Speed' },
+              { icon: 'shield', label: 'Security' },
+              { icon: 'auto_awesome', label: 'Simplicity' },
+            ].map(item => (
+              <div
+                key={item.label}
+                className="p-8 bg-surface-container-lowest rounded-xl text-center border border-outline-variant/50 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-primary mb-3" style={{ fontSize: 32 }}>
+                  {item.icon}
+                </span>
+                <div className="text-label-md text-on-surface font-bold uppercase tracking-wider">
+                  {item.label}
                 </div>
               </div>
             ))}
@@ -97,197 +152,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          CATEGORY FILTER PILLS
-          ═══════════════════════════════════════════════ */}
-      <div className="sticky top-16 z-30 bg-background/90 backdrop-blur-md border-b border-outline-variant/40 shadow-sm">
-        <div className="container-max">
-          <div className="flex items-center gap-2 overflow-x-auto py-3 hide-scrollbar">
-            {categoryLabels.map(label => {
-              const cat = appCategories.find(c => c.label === label)
-              const icon = cat?.icon ?? 'apps'
-              const isActive = activeFilter === label
-              return (
-                <button
-                  key={label}
-                  onClick={() => { setActiveFilter(label); setSearchTerm('') }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full whitespace-nowrap text-label-md font-bold border transition-all shrink-0 ${
-                    isActive
-                      ? 'bg-primary text-on-primary border-primary shadow-sm'
-                      : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary'
-                  }`}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 15 }}>{icon}</span>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════
-          TOOL GRID
-          ═══════════════════════════════════════════════ */}
-      <div className="container-max pt-12 pb-24 space-y-14">
+      {/* ═══ Tool Categories ═══ */}
+      <div className="container-max space-y-10 pt-16 pb-24">
         {filteredCategories.map(category => (
-          <section key={category.label} className="animate-fade-in-up">
-            {/* Section Header */}
+          <section key={category.label}>
+            {/* Section header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>
-                  {category.icon}
-                </span>
-              </div>
-              <div>
-                <h2 className="text-headline-sm text-on-surface font-bold leading-none">
-                  {category.label}
-                </h2>
-                <p className="text-label-md text-on-surface-variant mt-0.5">
-                  {category.tools.length} tool{category.tools.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="flex-1 h-px bg-outline-variant/50 ml-2 hidden sm:block" />
+              <span className="material-symbols-outlined text-primary" style={{ fontSize: 22 }}>
+                {category.icon}
+              </span>
+              <h2 className="text-headline-sm text-on-surface font-bold">
+                {category.label}
+              </h2>
             </div>
 
-            {/* Tool Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {/* Tool cards grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {category.tools.map(tool => (
                 <Link
                   key={tool.slug}
                   href={`/tools/${tool.slug}`}
-                  className="tool-card group block p-6 bg-surface-container-lowest border border-outline-variant rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
+                  className="tool-card group block p-8 bg-surface-container-lowest border border-outline-variant rounded-xl"
                 >
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                      <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 bg-surface-container rounded-lg text-primary">
+                      <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
                         {tool.icon}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      {tool.badge === 'Pro' && (
-                        <span className="bg-gradient-to-r from-orange-500 to-amber-400 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">
-                          PRO
-                        </span>
-                      )}
-                      <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" style={{ fontSize: 18 }}>
-                        arrow_forward
-                      </span>
-                    </div>
+                    <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" style={{ fontSize: 20 }}>
+                      arrow_forward
+                    </span>
                   </div>
-
-                  {/* Card Body */}
-                  <h3 className="text-label-md font-bold text-on-surface mb-1.5 group-hover:text-primary transition-colors">
-                    {tool.name}
-                  </h3>
-                  <p className="text-body-sm text-on-surface-variant leading-relaxed line-clamp-2">
-                    {tool.desc}
-                  </p>
+                  <h3 className="text-headline-sm text-on-surface mb-1">{tool.name}</h3>
+                  <p className="text-body-sm text-on-surface-variant">{tool.desc}</p>
                 </Link>
               ))}
             </div>
           </section>
         ))}
 
-        {/* ── No Results ── */}
-        {filteredCategories.length === 0 && (
-          <div className="text-center py-24">
-            <span className="material-symbols-outlined text-outline-variant mb-4" style={{ fontSize: 52 }}>
+        {/* No results */}
+        {filteredCategories.length === 0 && searchTerm && (
+          <div className="text-center py-20">
+            <span className="material-symbols-outlined text-outline-variant mb-4" style={{ fontSize: 48 }}>
               search_off
             </span>
             <p className="text-headline-sm text-on-surface mb-2">No tools found</p>
-            <p className="text-body-md text-on-surface-variant mb-6">
-              Try a different keyword or browse a category above.
+            <p className="text-body-md text-on-surface-variant">
+              Try a different search term or browse all categories above.
             </p>
-            <button
-              onClick={() => { setSearchTerm(''); setActiveFilter('All') }}
-              className="text-primary font-bold hover:underline text-label-md"
-            >
-              Clear search
-            </button>
           </div>
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════════
-          VALUE PROPS SECTION
-          ═══════════════════════════════════════════════ */}
-      <section className="bg-surface-container-low border-t border-outline-variant py-20">
-        <div className="container-max grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2
-              className="text-on-surface font-bold tracking-tight mb-5"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', lineHeight: 1.2, textWrap: 'balance' }}
-            >
-              Simple Tools, Serious Privacy
-            </h2>
-            <p className="text-body-lg text-on-surface-variant leading-relaxed mb-6">
-              QuickTools was built on the principle of zero-friction utility. Every task — compressing an image,
-              converting a PDF, or generating a QR code — happens directly in your browser.
-              Your files never touch our servers.
-            </p>
-            <Link
-              href="/about"
-              className="inline-flex items-center gap-2 text-primary font-bold text-label-md hover:underline"
-            >
-              Learn about our privacy principles
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { icon: 'bolt',          label: 'Speed',      desc: 'Instant results with no server round-trips.' },
-              { icon: 'shield',        label: 'Security',   desc: 'Files processed locally, never uploaded.' },
-              { icon: 'auto_awesome',  label: 'Simplicity', desc: 'No sign-up, no tracking, no nonsense.' },
-            ].map(item => (
-              <div
-                key={item.label}
-                className="p-6 bg-surface-container-lowest rounded-2xl border border-outline-variant/50 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3"
-              >
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: 28 }}>
-                  {item.icon}
-                </span>
-                <div>
-                  <div className="text-label-md text-on-surface font-bold uppercase tracking-wider mb-1">
-                    {item.label}
-                  </div>
-                  <p className="text-body-sm text-on-surface-variant">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════
-          CTA SECTION
-          ═══════════════════════════════════════════════ */}
+      {/* ═══ CTA Section ═══ */}
       <section className="bg-on-surface py-24 text-center relative overflow-hidden">
+        {/* Decorative blurs */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute top-0 left-0 w-64 h-64 bg-primary rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
         </div>
         <div className="container-max relative z-10">
           <h2
-            className="text-surface font-bold tracking-tight mb-5"
+            className="text-surface font-bold tracking-tight mb-6"
             style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', lineHeight: 1.2, textWrap: 'balance' }}
           >
             Ready to supercharge your workflow?
           </h2>
-          <p className="text-body-lg text-surface-variant mb-10 max-w-2xl mx-auto">
+          <p className="text-body-lg text-surface-variant mb-12 max-w-2xl mx-auto">
             Unlock advanced features, batch processing, and API access with QuickTools Pro.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
             <Link
               href="/pricing"
-              className="btn-press bg-primary text-on-primary px-10 py-4 rounded-xl text-label-md font-bold transition-all hover:bg-primary-container hover:scale-105 shadow-lg inline-block"
+              className="btn-press bg-primary text-on-primary px-10 py-4 rounded-xl text-label-md transition-all hover:bg-primary-container hover:scale-105 shadow-lg inline-block"
             >
               Upgrade to Pro
             </Link>
             <Link
               href="/pricing"
-              className="btn-press border-2 border-surface-variant/40 text-surface px-10 py-4 rounded-xl text-label-md font-bold transition-all hover:bg-surface/10 inline-block"
+              className="btn-press border-2 border-surface-variant text-surface px-10 py-4 rounded-xl text-label-md transition-all hover:bg-surface/10 inline-block"
             >
               View Pricing
             </Link>
@@ -295,6 +240,7 @@ export default function Home() {
         </div>
       </section>
 
-    </div>
+      <Footer />
+    </main>
   )
 }

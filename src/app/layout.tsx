@@ -75,7 +75,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col antialiased">
         {children}
       </body>
     </html>
