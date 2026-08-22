@@ -49,10 +49,10 @@ function isAuthRoute(pathname: string): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MIDDLEWARE
+// PROXY (Next.js 16 — replaces deprecated middleware.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Build a mutable response that tokens can be written into.
@@ -95,7 +95,7 @@ export async function middleware(request: NextRequest) {
   })
 
   // Calling getUser() triggers a silent token refresh when needed.
-  // This is the ONLY secure way to read session state in middleware —
+  // This is the ONLY secure way to read session state in proxy —
   // getSession() is NOT verified server-side and must never be used here.
   const {
     data: { user },
@@ -111,7 +111,7 @@ export async function middleware(request: NextRequest) {
     redirectUrl.pathname = '/auth'
     redirectUrl.searchParams.set('redirect', pathname)
     console.info(
-      `[middleware] Unauthenticated access to "${pathname}" — redirecting to /auth?redirect=${pathname}`
+      `[proxy] Unauthenticated access to "${pathname}" — redirecting to /auth?redirect=${pathname}`
     )
     return NextResponse.redirect(redirectUrl)
   }
@@ -123,7 +123,7 @@ export async function middleware(request: NextRequest) {
     redirectUrl.pathname = '/'
     redirectUrl.search = ''
     console.info(
-      `[middleware] Authenticated user tried to visit "${pathname}" — redirecting to /`
+      `[proxy] Authenticated user tried to visit "${pathname}" — redirecting to /`
     )
     return NextResponse.redirect(redirectUrl)
   }
@@ -133,7 +133,7 @@ export async function middleware(request: NextRequest) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MATCHER — only run middleware on real page routes
+// MATCHER — only run proxy on real page routes
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const config = {
@@ -145,7 +145,7 @@ export const config = {
      *   - favicon.ico   (browser tab icon)
      *   - Any file with an extension (images, fonts, icons, etc.)
      *
-     * This keeps middleware off static assets so page load speed
+     * This keeps proxy off static assets so page load speed
      * is not affected by the auth check.
      */
     '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|otf|css|js|map)$).*)',
