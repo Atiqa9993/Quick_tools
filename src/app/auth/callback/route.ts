@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     console.warn('[auth/callback] No code parameter received — possible stale or replayed request.')
-    return NextResponse.redirect(`${origin}/auth?error=oauth_failed`)
+    return NextResponse.redirect(`${origin}/auth?error=oauth_failed&desc=no_code_received`)
   }
 
   try {
