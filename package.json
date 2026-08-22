@@ -1,12 +1,14 @@
 {
-  "name": "handwriting-site",
+  "name": "quicktools",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backend": "cd backend && .\\venv\\Scripts\\python.exe run.py",
+    "launch": "START_APP.bat"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

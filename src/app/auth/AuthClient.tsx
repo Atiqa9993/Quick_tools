@@ -56,20 +56,7 @@ export default function AuthClient() {
       if (error) {
         showError(error.message)
       } else {
-        // Store session in Chrome extension storage if available
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          try {
-            // @ts-ignore — chrome API only available in extension context
-            await chrome.storage.local.set({ user_id: session.user.id, is_pro: false })
-          } catch {
-            // Not in extension context — safe to ignore
-          }
-        }
-        const searchParams = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search)
-          : new URLSearchParams()
-        const redirectTo = searchParams.get('redirect') || '/'
+        const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/'
         router.push(redirectTo)
         router.refresh()
       }
