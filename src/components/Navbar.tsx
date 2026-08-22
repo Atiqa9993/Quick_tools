@@ -246,9 +246,6 @@ export default function Navbar() {
           <Link href="/pricing" className="px-4 py-3 rounded-lg text-body-sm font-semibold transition-colors text-on-surface-variant hover:text-primary hover:bg-surface-container-high">
             Pricing
           </Link>
-          <Link href="/about" className="px-4 py-3 rounded-lg text-body-sm font-semibold transition-colors text-on-surface-variant hover:text-primary hover:bg-surface-container-high">
-            About
-          </Link>
           
           <div className="border-t border-outline-variant/30 mt-4 pt-4">
             {email ? (
